@@ -8,7 +8,7 @@
 
 ---
 
-## Table of Contents
+## Table of Contents:-
 
 - [Key Architectural Highlights](#key-architectural-highlights)
 - [Installation & Isolated Drivers](#installation--isolated-drivers)
