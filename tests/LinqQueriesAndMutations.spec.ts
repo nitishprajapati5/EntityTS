@@ -37,6 +37,9 @@ class LinqUser {
   @UpdatedAt()
   @Column()
   public updatedAt!: Date;
+
+  @Column({ nullable: true })
+  public notes?: string;
 }
 
 @Entity()
@@ -88,7 +91,8 @@ describe('LINQ Queries, Batch Mutations & Query Change Tracking', () => {
         role TEXT NOT NULL,
         age INTEGER NOT NULL,
         isActive INTEGER NOT NULL,
-        updatedAt TEXT
+        updatedAt TEXT,
+        notes TEXT
       );
     `);
     await db.executeRaw(`
@@ -116,23 +120,23 @@ describe('LINQ Queries, Batch Mutations & Query Change Tracking', () => {
     ]);
   });
 
-  describe('1. LINQ Filtering & Lambda Property Selectors', () => {
-    it('filters using strongly typed lambda property selector: where(u => u.prop, op, val)', async () => {
-      const adults = await db.users.where(u => u.age, '>=', 25).toList();
+  describe('1. LINQ Filtering & Pure Lambda Predicates (No String Operators)', () => {
+    it('filters using comparison predicate: where(u => u.age >= 25)', async () => {
+      const adults = await db.users.where(u => u.age >= 25).toList();
       expect(adults.length).toBe(2);
       expect(adults.map(u => u.name).sort()).toEqual(['Alice', 'Diana']);
     });
 
-    it('filters using lambda equality predicate: where(u => u.email === "...")', async () => {
+    it('filters using equality predicate: where(u => u.email === "...")', async () => {
       const user = await db.users.where(u => u.email === 'alice@example.com').firstOrDefault();
       expect(user).not.toBeNull();
       expect(user!.name).toBe('Alice');
     });
 
-    it('filters using lambda comparison predicate: where(u => u.age >= 28)', async () => {
-      const users = await db.users.where(u => u.age >= 28).toList();
-      expect(users.length).toBe(2);
-      expect(users.map(u => u.name).sort()).toEqual(['Alice', 'Diana']);
+    it('filters using inequality predicate: where(u => u.role !== "guest")', async () => {
+      const nonGuests = await db.users.where(u => u.role !== 'guest').toList();
+      expect(nonGuests.length).toBe(2);
+      expect(nonGuests.map(u => u.name).sort()).toEqual(['Alice', 'Diana']);
     });
 
     it('filters using boolean property shorthand: where(u => u.isActive) and where(u => !u.isActive)', async () => {
@@ -142,6 +146,53 @@ describe('LINQ Queries, Batch Mutations & Query Change Tracking', () => {
       const inactive = await db.users.where(u => !u.isActive).toList();
       expect(inactive.length).toBe(1);
       expect(inactive[0].name).toBe('Charlie');
+    });
+
+    it('filters using string LINQ methods: startsWith, endsWith, includes (no string LIKE operator)', async () => {
+      // startsWith
+      const charlieList = await db.users.where(u => u.name.startsWith('Char')).toList();
+      expect(charlieList.length).toBe(1);
+      expect(charlieList[0].name).toBe('Charlie');
+
+      // endsWith
+      const dianaList = await db.users.where(u => u.name.endsWith('na')).toList();
+      expect(dianaList.length).toBe(1);
+      expect(dianaList[0].name).toBe('Diana');
+
+      // includes
+      const licList = await db.users.where(u => u.name.includes('lic')).toList();
+      expect(licList.length).toBe(1);
+      expect(licList[0].name).toBe('Alice');
+    });
+
+    it('filters using array containment: where(u => [..].includes(u.role)) (no string IN operator)', async () => {
+      const staff = await db.users.where(u => ['admin', 'member'].includes(u.role)).toList();
+      expect(staff.length).toBe(2);
+      expect(staff.map(u => u.name).sort()).toEqual(['Alice', 'Diana']);
+    });
+
+    it('filters using null checks: where(u => u.notes === null) and where(u => u.notes !== null) (no string IS NULL operator)', async () => {
+      const noNotes = await db.users.where(u => u.notes === null).toList();
+      expect(noNotes.length).toBe(4);
+
+      await db.users.where(u => u.name === 'Alice').executeUpdate({ notes: 'Lead Architect' });
+      const hasNotes = await db.users.where(u => u.notes !== null).toList();
+      expect(hasNotes.length).toBe(1);
+      expect(hasNotes[0].name).toBe('Alice');
+    });
+
+    it('filters using compound logical predicates: && and ||', async () => {
+      // Conjunction &&
+      const matureActive = await db.users.where(u => u.age >= 25 && u.isActive).toList();
+      expect(matureActive.length).toBe(2);
+      expect(matureActive.map(u => u.name).sort()).toEqual(['Alice', 'Diana']);
+
+      // Disjunction ||
+      const privileged = await db.users
+        .where(u => u.role === 'admin' || u.role === 'member')
+        .toList();
+      expect(privileged.length).toBe(2);
+      expect(privileged.map(u => u.name).sort()).toEqual(['Alice', 'Diana']);
     });
   });
 
@@ -197,22 +248,22 @@ describe('LINQ Queries, Batch Mutations & Query Change Tracking', () => {
     });
   });
 
-  describe('3. Batch Mutations: executeUpdate & updateWhere', () => {
+  describe('3. Batch Mutations: executeUpdate & updateWhere with Pure Predicates', () => {
     it('executes bulk update via executeUpdate with a partial object', async () => {
       const affected = await db.users
-        .where(u => u.role, '=', 'guest')
+        .where(u => u.role === 'guest')
         .executeUpdate({ role: 'contributor' });
 
       expect(affected).toBe(2);
 
-      const contributors = await db.users.where(u => u.role, '=', 'contributor').toList();
+      const contributors = await db.users.where(u => u.role === 'contributor').toList();
       expect(contributors.length).toBe(2);
       expect(contributors.map(u => u.name).sort()).toEqual(['Bob', 'Charlie']);
     });
 
     it('executes bulk update via executeUpdate with UpdateSetBuilder callback', async () => {
       const affected = await db.users
-        .where(u => u.name, '=', 'Charlie')
+        .where(u => u.name === 'Charlie')
         .executeUpdate(s => s.set(u => u.isActive, true).set(u => u.role, 'member'));
 
       expect(affected).toBe(1);
@@ -222,8 +273,8 @@ describe('LINQ Queries, Batch Mutations & Query Change Tracking', () => {
       expect(charlie.role).toBe('member');
     });
 
-    it('executes bulk update via updateWhere shorthand', async () => {
-      const affected = await db.users.updateWhere(w => w.eq('name', 'Bob'), { role: 'vip' });
+    it('executes bulk update via updateWhere shorthand with pure lambda predicate', async () => {
+      const affected = await db.users.updateWhere(u => u.name === 'Bob', { role: 'vip' });
 
       expect(affected).toBe(1);
 
@@ -232,9 +283,9 @@ describe('LINQ Queries, Batch Mutations & Query Change Tracking', () => {
     });
   });
 
-  describe('4. Batch Mutations: executeDelete & removeWhere', () => {
+  describe('4. Batch Mutations: executeDelete & removeWhere with Pure Predicates', () => {
     it('executes bulk delete via executeDelete', async () => {
-      const affected = await db.users.where(u => u.age, '<', 20).executeDelete();
+      const affected = await db.users.where(u => u.age < 20).executeDelete();
 
       expect(affected).toBe(1); // Charlie (age 17)
 
@@ -245,7 +296,7 @@ describe('LINQ Queries, Batch Mutations & Query Change Tracking', () => {
 
     it('respects soft-delete in executeDelete and removeWhere', async () => {
       // 2 drafts exist
-      const affected = await db.posts.where(p => p.status, '=', 'draft').executeDelete();
+      const affected = await db.posts.where(p => p.status === 'draft').executeDelete();
 
       expect(affected).toBe(2);
 
@@ -261,7 +312,7 @@ describe('LINQ Queries, Batch Mutations & Query Change Tracking', () => {
 
     it('performs hard delete on soft-delete model when hardDelete: true is passed', async () => {
       const affected = await db.posts
-        .where(p => p.title, '=', 'Post 2')
+        .where(p => p.title === 'Post 2')
         .executeDelete({ hardDelete: true });
 
       expect(affected).toBe(1);
@@ -269,7 +320,7 @@ describe('LINQ Queries, Batch Mutations & Query Change Tracking', () => {
       // Verify row is physically gone from database
       const count = await db.posts
         .withDeleted()
-        .where(p => p.title, '=', 'Post 2')
+        .where(p => p.title === 'Post 2')
         .count();
       expect(count).toBe(0);
     });
@@ -285,7 +336,7 @@ describe('LINQ Queries, Batch Mutations & Query Change Tracking', () => {
 
   describe('5. Query Change Tracking & Unit of Work (saveChanges)', () => {
     it('does not track entities by default when asTracking is not used', async () => {
-      const users = await db.users.where(u => u.name, '=', 'Diana').toList();
+      const users = await db.users.where(u => u.name === 'Diana').toList();
       expect(users.length).toBe(1);
 
       const entry = db.changeTracker.entry(users[0]);
@@ -294,7 +345,7 @@ describe('LINQ Queries, Batch Mutations & Query Change Tracking', () => {
 
     it('tracks entities when .asTracking() is chained on LINQ query and flushes changes on saveChanges()', async () => {
       const users = await db.users
-        .where(u => u.name, '=', 'Diana')
+        .where(u => u.name === 'Diana')
         .asTracking()
         .toList();
 
@@ -321,7 +372,7 @@ describe('LINQ Queries, Batch Mutations & Query Change Tracking', () => {
     it('supports asNoTracking() to explicitly bypass tracking', async () => {
       const users = await db.users
         .asNoTracking()
-        .where(u => u.name, '=', 'Alice')
+        .where(u => u.name === 'Alice')
         .toList();
 
       expect(db.changeTracker.entry(users[0])).toBeUndefined();
@@ -348,7 +399,7 @@ describe('LINQ Queries, Batch Mutations & Query Change Tracking', () => {
         isActive: true,
       });
 
-      const users = await trackDb.users.where(u => u.name, '=', 'Bob').toList();
+      const users = await trackDb.users.where(u => u.name === 'Bob').toList();
       expect(users.length).toBe(1);
 
       const entry = trackDb.changeTracker.entry(users[0]);

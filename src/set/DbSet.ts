@@ -64,6 +64,7 @@ export interface DbSetOptions {
   includes?: string[];
   lazy?: boolean;
   tracking?: boolean;
+  inMemoryFilters?: ((entity: any) => boolean)[];
 }
 
 /**
@@ -634,6 +635,8 @@ export class DbSet<T extends object = any> {
       return this.createClone(qb);
     }
 
+    const newInMemoryFilters: ((entity: any) => boolean)[] = [];
+
     for (const arg of args) {
       if (!arg) continue;
       if (typeof arg === 'function') {
@@ -647,10 +650,9 @@ export class DbSet<T extends object = any> {
         if (result instanceof WhereClause) {
           qb.where(result);
         } else if (where.conditions.length === initialCondLength) {
-          const parsed = this.parseLambdaPredicate(arg);
-          if (parsed) {
-            const col = this.mapPropertyToColumn(parsed.property);
-            (where as any).addCondition(col, parsed.operator as any, parsed.value);
+          const applied = this.applyLambdaPredicate(where, arg);
+          if (!applied) {
+            newInMemoryFilters.push(arg);
           }
         }
       } else if (typeof arg === 'object' && arg !== null) {
@@ -666,7 +668,13 @@ export class DbSet<T extends object = any> {
         }
       }
     }
-    return this.createClone(qb);
+
+    const optionsOverride =
+      newInMemoryFilters.length > 0
+        ? { inMemoryFilters: [...(this.options.inMemoryFilters || []), ...newInMemoryFilters] }
+        : undefined;
+
+    return this.createClone(qb, optionsOverride);
   }
 
   /**
@@ -1196,6 +1204,12 @@ export class DbSet<T extends object = any> {
     }
     let entities = rows.map(r => this.mapRowToEntity(r));
 
+    if (this.options.inMemoryFilters && this.options.inMemoryFilters.length > 0) {
+      for (const filter of this.options.inMemoryFilters) {
+        entities = entities.filter(filter);
+      }
+    }
+
     if (this.options.includes && this.options.includes.length > 0 && entities.length > 0) {
       await this.loadIncludes(entities, this.options.includes);
     }
@@ -1529,25 +1543,10 @@ export class DbSet<T extends object = any> {
    * ```
    */
   public async first(predicate?: LinqPredicate<T>): Promise<T | null> {
-    let set: DbSet<T> = this;
-    let inMemoryPredicate: ((entity: T) => boolean) | undefined;
-    if (predicate) {
-      if (typeof predicate === 'function') {
-        const initialCondLength = set.queryBuilder.getWhereClause().conditions.length;
-        const temp = set.where(predicate as any);
-        if (temp.queryBuilder.getWhereClause().conditions.length > initialCondLength) {
-          set = temp;
-        } else {
-          inMemoryPredicate = predicate as (entity: T) => boolean;
-        }
-      } else {
-        set = set.where(predicate);
-      }
-    }
-    if (inMemoryPredicate) {
+    const set = predicate ? this.where(predicate as any) : this;
+    if (set.options.inMemoryFilters && set.options.inMemoryFilters.length > 0) {
       const list = await set.toList();
-      const item = list.find(inMemoryPredicate);
-      return item ?? null;
+      return list.length > 0 ? list[0] : null;
     }
     const list = await set.take(1).toList();
     return list.length > 0 ? list[0] : null;
@@ -1594,28 +1593,13 @@ export class DbSet<T extends object = any> {
    * ```
    */
   public async single(predicate?: LinqPredicate<T>): Promise<T | null> {
-    let set: DbSet<T> = this;
-    let inMemoryPredicate: ((entity: T) => boolean) | undefined;
-    if (predicate) {
-      if (typeof predicate === 'function') {
-        const initialCondLength = set.queryBuilder.getWhereClause().conditions.length;
-        const temp = set.where(predicate as any);
-        if (temp.queryBuilder.getWhereClause().conditions.length > initialCondLength) {
-          set = temp;
-        } else {
-          inMemoryPredicate = predicate as (entity: T) => boolean;
-        }
-      } else {
-        set = set.where(predicate);
-      }
-    }
-    if (inMemoryPredicate) {
+    const set = predicate ? this.where(predicate as any) : this;
+    if (set.options.inMemoryFilters && set.options.inMemoryFilters.length > 0) {
       const list = await set.toList();
-      const matched = list.filter(inMemoryPredicate);
-      if (matched.length > 1) {
+      if (list.length > 1) {
         throw new DbException(`Sequence contains more than one element in '${this.tableName}'.`);
       }
-      return matched.length === 1 ? matched[0] : null;
+      return list.length === 1 ? list[0] : null;
     }
     const list = await set.take(2).toList();
     if (list.length > 1) {
@@ -1736,6 +1720,10 @@ export class DbSet<T extends object = any> {
     if (predicate) {
       set = set.where(predicate as any);
     }
+    if (set.options.inMemoryFilters && set.options.inMemoryFilters.length > 0) {
+      const list = await set.toList();
+      return list.length;
+    }
     const qb = set.prepareFinalQueryBuilder();
     const { sql, params } = qb.toCountSql();
     const adapter = this.resolveEffectiveAdapter(qb);
@@ -1848,16 +1836,8 @@ export class DbSet<T extends object = any> {
     if (!predicate) {
       return (await this.count()) > 0;
     }
-    if (typeof predicate === 'function') {
-      const initialCondLength = this.queryBuilder.getWhereClause().conditions.length;
-      const temp = this.where(predicate as any);
-      if (temp.queryBuilder.getWhereClause().conditions.length > initialCondLength) {
-        return (await temp.count()) > 0;
-      }
-      const list = await this.toList();
-      return list.some(predicate as (entity: T) => boolean);
-    }
-    return (await this.count(predicate)) > 0;
+    const filtered = this.where(predicate as any);
+    return (await filtered.count()) > 0;
   }
 
   /**
@@ -1875,17 +1855,8 @@ export class DbSet<T extends object = any> {
   public async all(predicate: LinqPredicate<T>): Promise<boolean> {
     const total = await this.count();
     if (total === 0) return true;
-    if (typeof predicate === 'function') {
-      const initialCondLength = this.queryBuilder.getWhereClause().conditions.length;
-      const temp = this.where(predicate as any);
-      if (temp.queryBuilder.getWhereClause().conditions.length > initialCondLength) {
-        const matching = await temp.count();
-        return matching === total;
-      }
-      const list = await this.toList();
-      return list.every(predicate as (entity: T) => boolean);
-    }
-    const matching = await this.count(predicate);
+    const filtered = this.where(predicate as any);
+    const matching = await filtered.count();
     return matching === total;
   }
 
@@ -2027,9 +1998,7 @@ export class DbSet<T extends object = any> {
     return prop || '*';
   }
 
-  private parseLambdaPredicate(
-    fn: Function,
-  ): { property: string; operator: string; value: any } | null {
+  private applyLambdaPredicate(where: WhereClause<T>, fn: Function): boolean {
     try {
       const str = fn.toString().trim();
       const arrowMatch = str.match(
@@ -2044,57 +2013,286 @@ export class DbSet<T extends object = any> {
         : funcMatch
           ? funcMatch[1].trim()
           : null;
-      const body = arrowMatch ? arrowMatch[3].trim() : funcMatch ? funcMatch[2].trim() : null;
+      let body = arrowMatch ? arrowMatch[3].trim() : funcMatch ? funcMatch[2].trim() : null;
 
-      if (!param || !body) return null;
+      if (!param || !body) return false;
 
-      // Boolean shorthand: u => u.isActive or u => !u.isActive
-      const boolMatch = body.match(new RegExp(`^(!?)${param}\\.([a-zA-Z0-9_$]+)$`));
-      if (boolMatch) {
-        const isNegated = boolMatch[1] === '!';
-        const prop = boolMatch[2];
-        return { property: prop, operator: '=', value: !isNegated };
+      // Strip outer matching parentheses
+      while (body.startsWith('(') && body.endsWith(')')) {
+        let depth = 0;
+        let balanced = true;
+        for (let i = 0; i < body.length - 1; i++) {
+          if (body[i] === '(') depth++;
+          else if (body[i] === ')') depth--;
+          if (depth === 0) {
+            balanced = false;
+            break;
+          }
+        }
+        if (balanced) {
+          body = body.slice(1, -1).trim();
+        } else {
+          break;
+        }
       }
 
-      // Comparison: u => u.prop === val, >, >=, <, <=, !=, !==
-      const opMatch = body.match(
-        new RegExp(`^${param}\\.([a-zA-Z0-9_$]+)\\s*(===|==|!==|!=|>=|<=|>|<)\\s*(.+)$`),
-      );
-      if (!opMatch) return null;
+      // 1. Check for top-level || (disjunction)
+      const orParts = this.splitTopLevelLogical(body, '||');
+      if (orParts.length > 1) {
+        let allSucceeded = true;
+        where.group(g => {
+          for (let i = 0; i < orParts.length; i++) {
+            if (i > 0) g.or();
+            const partSuccess = this.parseAndApplyAndGroup(g, orParts[i], param);
+            if (!partSuccess) allSucceeded = false;
+          }
+        });
+        return allSucceeded;
+      }
 
+      // 2. Check for top-level && (conjunction)
+      return this.parseAndApplyAndGroup(where, body, param);
+    } catch {
+      return false;
+    }
+  }
+
+  private parseAndApplyAndGroup(where: WhereClause<T>, body: string, param: string): boolean {
+    const andParts = this.splitTopLevelLogical(body, '&&');
+    for (const part of andParts) {
+      const ok = this.parseSinglePredicatePart(where, part, param);
+      if (!ok) return false;
+    }
+    return true;
+  }
+
+  private splitTopLevelLogical(str: string, delimiter: '&&' | '||'): string[] {
+    const parts: string[] = [];
+    let current = '';
+    let inSingleQuote = false;
+    let inDoubleQuote = false;
+    let inBacktick = false;
+    let parenDepth = 0;
+    let bracketDepth = 0;
+
+    for (let i = 0; i < str.length; i++) {
+      const char = str[i];
+      const next = str[i + 1];
+
+      if (char === "'" && !inDoubleQuote && !inBacktick) {
+        inSingleQuote = !inSingleQuote;
+        current += char;
+      } else if (char === '"' && !inSingleQuote && !inBacktick) {
+        inDoubleQuote = !inDoubleQuote;
+        current += char;
+      } else if (char === '`' && !inSingleQuote && !inDoubleQuote) {
+        inBacktick = !inBacktick;
+        current += char;
+      } else if (!inSingleQuote && !inDoubleQuote && !inBacktick) {
+        if (char === '(') parenDepth++;
+        else if (char === ')') parenDepth--;
+        else if (char === '[') bracketDepth++;
+        else if (char === ']') bracketDepth--;
+
+        if (
+          parenDepth === 0 &&
+          bracketDepth === 0 &&
+          char === delimiter[0] &&
+          next === delimiter[1]
+        ) {
+          parts.push(current.trim());
+          current = '';
+          i++; // skip next char
+          continue;
+        }
+        current += char;
+      } else {
+        current += char;
+      }
+    }
+
+    if (current.trim().length > 0) {
+      parts.push(current.trim());
+    }
+
+    return parts;
+  }
+
+  private parseLiteralValue(raw: string): { success: boolean; value: any } {
+    raw = raw.trim();
+    if (raw === 'true') return { success: true, value: true };
+    if (raw === 'false') return { success: true, value: false };
+    if (raw === 'null') return { success: true, value: null };
+    if (raw === 'undefined') return { success: true, value: undefined };
+    if (/^-?\d+(?:\.\d+)?$/.test(raw)) return { success: true, value: Number(raw) };
+    if (
+      (raw.startsWith("'") && raw.endsWith("'")) ||
+      (raw.startsWith('"') && raw.endsWith('"')) ||
+      (raw.startsWith('`') && raw.endsWith('`'))
+    ) {
+      return { success: true, value: raw.slice(1, -1) };
+    }
+    if (raw.startsWith('[') && raw.endsWith(']')) {
+      try {
+        const jsonStr = raw.replace(/'/g, '"');
+        const parsed = JSON.parse(jsonStr);
+        if (Array.isArray(parsed)) return { success: true, value: parsed };
+      } catch {
+        // ignore
+      }
+    }
+    return { success: false, value: undefined };
+  }
+
+  private parseSinglePredicatePart(where: WhereClause<T>, part: string, param: string): boolean {
+    part = part.trim();
+    while (part.startsWith('(') && part.endsWith(')')) {
+      let depth = 0;
+      let balanced = true;
+      for (let i = 0; i < part.length - 1; i++) {
+        if (part[i] === '(') depth++;
+        else if (part[i] === ')') depth--;
+        if (depth === 0) {
+          balanced = false;
+          break;
+        }
+      }
+      if (balanced) {
+        part = part.slice(1, -1).trim();
+      } else {
+        break;
+      }
+    }
+
+    // A. String methods: u.name.includes('ali') or u.name.contains('ali')
+    const incMatch = part.match(
+      new RegExp(`^(!?)${param}\\.([a-zA-Z0-9_$]+)\\.(?:includes|contains)\\s*\\((.+)\\)$`),
+    );
+    if (incMatch) {
+      const isNegated = incMatch[1] === '!';
+      const col = this.mapPropertyToColumn(incMatch[2]);
+      const valObj = this.parseLiteralValue(incMatch[3]);
+      if (!valObj.success) return false;
+      const pattern = `%${valObj.value}%`;
+      if (isNegated) where.notLike(col, pattern);
+      else where.like(col, pattern);
+      return true;
+    }
+
+    // B. String methods: u.name.startsWith('foo')
+    const startMatch = part.match(
+      new RegExp(`^(!?)${param}\\.([a-zA-Z0-9_$]+)\\.startsWith\\s*\\((.+)\\)$`),
+    );
+    if (startMatch) {
+      const isNegated = startMatch[1] === '!';
+      const col = this.mapPropertyToColumn(startMatch[2]);
+      const valObj = this.parseLiteralValue(startMatch[3]);
+      if (!valObj.success) return false;
+      const pattern = `${valObj.value}%`;
+      if (isNegated) where.notLike(col, pattern);
+      else where.like(col, pattern);
+      return true;
+    }
+
+    // C. String methods: u.name.endsWith('foo')
+    const endMatch = part.match(
+      new RegExp(`^(!?)${param}\\.([a-zA-Z0-9_$]+)\\.endsWith\\s*\\((.+)\\)$`),
+    );
+    if (endMatch) {
+      const isNegated = endMatch[1] === '!';
+      const col = this.mapPropertyToColumn(endMatch[2]);
+      const valObj = this.parseLiteralValue(endMatch[3]);
+      if (!valObj.success) return false;
+      const pattern = `%${valObj.value}`;
+      if (isNegated) where.notLike(col, pattern);
+      else where.like(col, pattern);
+      return true;
+    }
+
+    // D. Array includes: ['admin', 'guest'].includes(u.role)
+    const arrMatch = part.match(
+      new RegExp(`^(!?)(.+?)\\.includes\\s*\\(${param}\\.([a-zA-Z0-9_$]+)\\)$`),
+    );
+    if (arrMatch) {
+      const isNegated = arrMatch[1] === '!';
+      const valObj = this.parseLiteralValue(arrMatch[2]);
+      if (!valObj.success || !Array.isArray(valObj.value)) return false;
+      const col = this.mapPropertyToColumn(arrMatch[3]);
+      if (isNegated) where.notIn(col, valObj.value);
+      else where.in(col, valObj.value);
+      return true;
+    }
+
+    // E. Null / undefined checks: u.prop === null / undefined
+    const nullMatch = part.match(
+      new RegExp(`^${param}\\.([a-zA-Z0-9_$]+)\\s*(===|==|!==|!=)\\s*(null|undefined)$`),
+    );
+    const nullRevMatch = !nullMatch
+      ? part.match(
+          new RegExp(`^(null|undefined)\\s*(===|==|!==|!=)\\s*${param}\\.([a-zA-Z0-9_$]+)$`),
+        )
+      : null;
+    if (nullMatch || nullRevMatch) {
+      const prop = nullMatch ? nullMatch[1] : nullRevMatch![3];
+      const jsOp = nullMatch ? nullMatch[2] : nullRevMatch![2];
+      const col = this.mapPropertyToColumn(prop);
+      if (jsOp === '===' || jsOp === '==') where.isNull(col);
+      else where.isNotNull(col);
+      return true;
+    }
+
+    // F. Boolean property shorthand: u.isActive or !u.isActive
+    const boolMatch = part.match(new RegExp(`^(!?)${param}\\.([a-zA-Z0-9_$]+)$`));
+    if (boolMatch) {
+      const isNegated = boolMatch[1] === '!';
+      const col = this.mapPropertyToColumn(boolMatch[2]);
+      where.eq(col, !isNegated);
+      return true;
+    }
+
+    // G. Binary comparison: u.prop === val, >, >=, <, <=, !=, !==
+    const opMatch = part.match(
+      new RegExp(`^${param}\\.([a-zA-Z0-9_$]+)\\s*(===|==|!==|!=|>=|<=|>|<)\\s*(.+)$`),
+    );
+    if (opMatch) {
       const prop = opMatch[1];
       const jsOp = opMatch[2];
-      const rawVal = opMatch[3].trim();
+      const valObj = this.parseLiteralValue(opMatch[3]);
+      if (!valObj.success) return false;
+      const col = this.mapPropertyToColumn(prop);
+      const val = valObj.value;
 
-      let op = '=';
-      if (jsOp === '===' || jsOp === '==') op = '=';
-      else if (jsOp === '!==' || jsOp === '!=') op = '<>';
-      else if (jsOp === '>=') op = '>=';
-      else if (jsOp === '<=') op = '<=';
-      else if (jsOp === '>') op = '>';
-      else if (jsOp === '<') op = '<';
-
-      let val: any;
-      if (rawVal === 'true') val = true;
-      else if (rawVal === 'false') val = false;
-      else if (rawVal === 'null') val = null;
-      else if (rawVal === 'undefined') val = undefined;
-      else if (/^-?\d+(?:\.\d+)?$/.test(rawVal)) val = Number(rawVal);
-      else if (
-        (rawVal.startsWith("'") && rawVal.endsWith("'")) ||
-        (rawVal.startsWith('"') && rawVal.endsWith('"')) ||
-        (rawVal.startsWith('`') && rawVal.endsWith('`'))
-      ) {
-        val = rawVal.slice(1, -1);
-      } else {
-        // Not a static literal — likely a closure variable or outer scope expression
-        return null;
-      }
-
-      return { property: prop, operator: op, value: val };
-    } catch {
-      return null;
+      if (jsOp === '===' || jsOp === '==') where.eq(col, val);
+      else if (jsOp === '!==' || jsOp === '!=') where.ne(col, val);
+      else if (jsOp === '>=') where.gte(col, val);
+      else if (jsOp === '<=') where.lte(col, val);
+      else if (jsOp === '>') where.gt(col, val);
+      else if (jsOp === '<') where.lt(col, val);
+      return true;
     }
+
+    // H. Reverse binary comparison: val === u.prop, val <= u.prop, etc.
+    const revOpMatch = part.match(
+      new RegExp(`^(.+?)\\s*(===|==|!==|!=|>=|<=|>|<)\\s*${param}\\.([a-zA-Z0-9_$]+)$`),
+    );
+    if (revOpMatch) {
+      const valObj = this.parseLiteralValue(revOpMatch[1]);
+      if (!valObj.success) return false;
+      const jsOp = revOpMatch[2];
+      const prop = revOpMatch[3];
+      const col = this.mapPropertyToColumn(prop);
+      const val = valObj.value;
+
+      if (jsOp === '===' || jsOp === '==') where.eq(col, val);
+      else if (jsOp === '!==' || jsOp === '!=') where.ne(col, val);
+      else if (jsOp === '>=') where.lte(col, val);
+      else if (jsOp === '<=') where.gte(col, val);
+      else if (jsOp === '>') where.lt(col, val);
+      else if (jsOp === '<') where.gt(col, val);
+      return true;
+    }
+
+    return false;
   }
 
   // --- Change Tracking ---
@@ -2498,6 +2696,18 @@ export class DbSet<T extends object = any> {
     patchOrSetter: Partial<T> | ((setter: UpdateSetBuilder<T>) => void | UpdateSetBuilder<T>),
   ): Promise<number> {
     this.ensureNotView('executeUpdate');
+
+    if (this.options.inMemoryFilters && this.options.inMemoryFilters.length > 0) {
+      const pkProp = this.getPrimaryKeyProperty();
+      const matching = await this.toList();
+      const ids = matching
+        .map(e => (e as any)[pkProp])
+        .filter(id => id !== undefined && id !== null);
+      if (ids.length === 0) return 0;
+      const clone = this.createClone(undefined, { inMemoryFilters: [] });
+      const pkCol = clone.mapPropertyToColumn(pkProp);
+      return clone.where(w => w.in(pkCol, ids)).executeUpdate(patchOrSetter);
+    }
 
     let rawData: Record<string, unknown>;
     if (typeof patchOrSetter === 'function') {
@@ -2958,6 +3168,18 @@ export class DbSet<T extends object = any> {
    */
   public async executeDelete(options?: { hardDelete?: boolean }): Promise<number> {
     this.ensureNotView('executeDelete');
+
+    if (this.options.inMemoryFilters && this.options.inMemoryFilters.length > 0) {
+      const pkProp = this.getPrimaryKeyProperty();
+      const matching = await this.toList();
+      const ids = matching
+        .map(e => (e as any)[pkProp])
+        .filter(id => id !== undefined && id !== null);
+      if (ids.length === 0) return 0;
+      const clone = this.createClone(undefined, { inMemoryFilters: [] });
+      const pkCol = clone.mapPropertyToColumn(pkProp);
+      return clone.where(w => w.in(pkCol, ids)).executeDelete(options);
+    }
     const qb = this.prepareFinalQueryBuilder();
     const effectiveAdapter = this.resolveEffectiveAdapter(qb);
 

@@ -14,33 +14,38 @@ All querying is structured around strongly-typed, composable LINQ method chainin
 
 ## 🔍 Filtering (`where`)
 
-EntityTS provides multiple LINQ filtering patterns:
+EntityTS provides pure LINQ lambda predicates matching C# / EF Core syntax—with zero string-like operators needed:
 
-### 1. Strongly-Typed Lambda Selectors
+### 1. Pure LINQ Lambda Predicates
 
-```ts
-// Property selector with comparison operator and operand
-const adultUsers = await db.users
-  .where(u => u.age, '>=', 18)
-  .where(u => u.isActive, '=', true)
-  .toList();
-```
-
-### 2. LINQ WhereClause Builder (Complex Boolean Logic)
+Write standard TypeScript expressions. EntityTS parses the AST and compiles directly to parameterized SQL:
 
 ```ts
-// Fluent boolean expression tree with AND / OR precedence
-const highValueCustomers = await db.users
-  .where(w => w.eq('role', 'admin').or(w.gt('loginCount', 100).and().eq('tier', 'platinum')))
+// Comparisons, equality, and boolean shorthand
+const adultUsers = await db.users.where(u => u.age >= 18 && u.isActive).toList();
+
+// String LINQ methods (translated to SQL LIKE patterns)
+const matching = await db.users
+  .where(u => u.name.startsWith('Al'))
+  .where(u => u.email.endsWith('@company.com'))
+  .where(u => u.bio.includes('engineer'))
   .toList();
+
+// Set containment (translated to SQL IN / NOT IN)
+const staff = await db.users.where(u => ['admin', 'manager', 'lead'].includes(u.role)).toList();
+
+// Null / Undefined checks (translated to SQL IS NULL / IS NOT NULL)
+const pendingReview = await db.users.where(u => u.reviewedAt === null).toList();
+
+// Logical Disjunction (OR)
+const privileged = await db.users.where(u => u.role === 'admin' || u.role === 'moderator').toList();
 ```
 
-### 3. Direct Key-Value Equality
+### 2. Direct Key-Value Equality Shorthand
 
 ```ts
 const verifiedStaff = await db.users
-  .where('isVerified', '=', true)
-  .where('department', '=', 'Engineering')
+  .where({ isVerified: true, department: 'Engineering' })
   .toList();
 ```
 
@@ -176,13 +181,13 @@ const salesByDepartment = await db.orders
 // AsNoTracking: Bypass change tracking for read-only query performance
 const readOnlyData = await db.users
   .asNoTracking()
-  .where(u => u.isActive, '=', true)
+  .where(u => u.isActive)
   .toList();
 
 // AsTracking: Explicitly opt-in to ChangeTracker observation
 const trackedUsers = await db.users
   .asTracking()
-  .where(u => u.role, '=', 'member')
+  .where(u => u.role === 'member')
   .toList();
 
 trackedUsers[0].role = 'admin';
@@ -203,14 +208,14 @@ Execute high-performance bulk updates and bulk deletes directly on the database 
 Pass either a partial entity patch or a fluent `UpdateSetBuilder` callback:
 
 ```ts
-// 1. Partial object patch
+// 1. Partial object patch with pure comparison predicate
 const updatedCount = await db.users
-  .where(u => u.lastLoginAt, '<', thirtyDaysAgo)
+  .where(u => u.lastLoginAt < thirtyDaysAgo)
   .executeUpdate({ isActive: false });
 
 // 2. Fluent UpdateSetBuilder callback
 await db.users
-  .where(u => u.department, '=', 'Sales')
+  .where(u => u.department === 'Sales')
   .executeUpdate(s => s.set(u => u.bonusEligible, true).set(u => u.reviewStatus, 'approved'));
 
 // 3. Shorthand updateWhere on DbSet
@@ -222,10 +227,9 @@ await db.users.updateWhere(u => u.role === 'guest', { isActive: false });
 Delete all matching records directly at the database level. If an entity uses `@SoftDelete()`, `executeDelete()` automatically issues a soft-delete update instead of a physical deletion:
 
 ```ts
-// Direct batch delete on LINQ query
+// Direct batch delete on LINQ query with compound predicate
 const deletedCount = await db.notifications
-  .where(n => n.isRead, '=', true)
-  .where(n => n.createdAt, '<', cutoffDate)
+  .where(n => n.isRead && n.createdAt < cutoffDate)
   .executeDelete();
 
 // Shorthand removeWhere on DbSet

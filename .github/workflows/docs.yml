@@ -17,8 +17,26 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  gate:
+    name: Check Docs CI Gate
+    runs-on: ubuntu-latest
+    if: >-
+      !contains(github.event.head_commit.message, '[skip ci]') &&
+      !contains(github.event.head_commit.message, '[ci skip]') &&
+      !contains(github.event.head_commit.message, '[skip docs]')
+    outputs:
+      enabled: ${{ steps.check.outputs.enabled }}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+      - name: Evaluate CI Gate
+        id: check
+        run: node scripts/ci-gate.js docs
+
   build-and-deploy:
     name: Build & Deploy Docusaurus Documentation
+    needs: gate
+    if: needs.gate.outputs.enabled == 'true'
     runs-on: ubuntu-latest
     environment:
       name: github-pages

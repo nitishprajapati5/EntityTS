@@ -8,8 +8,27 @@ on:
   workflow_dispatch:
 
 jobs:
+  gate:
+    name: Check MySQL CI Gate
+    runs-on: ubuntu-latest
+    if: >-
+      !contains(github.event.head_commit.message, '[skip ci]') &&
+      !contains(github.event.head_commit.message, '[ci skip]') &&
+      !contains(github.event.head_commit.message, '[skip db]') &&
+      !contains(github.event.head_commit.message, '[skip mysql]')
+    outputs:
+      enabled: ${{ steps.check.outputs.enabled }}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+      - name: Evaluate CI Gate
+        id: check
+        run: node scripts/ci-gate.js mysql
+
   mysql-test:
     name: MySQL 8.0 on Node ${{ matrix.node-version }}
+    needs: gate
+    if: needs.gate.outputs.enabled == 'true'
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false

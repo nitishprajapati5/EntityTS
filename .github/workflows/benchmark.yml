@@ -7,8 +7,22 @@ on:
     - cron: '0 0 * * 0'
 
 jobs:
+  gate:
+    name: Check Benchmark CI Gate
+    runs-on: ubuntu-latest
+    outputs:
+      enabled: ${{ steps.check.outputs.enabled }}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+      - name: Evaluate CI Gate
+        id: check
+        run: node scripts/ci-gate.js benchmark
+
   benchmark:
     name: Run ORM Execution Comparison Benchmarks
+    needs: gate
+    if: needs.gate.outputs.enabled == 'true'
     runs-on: ubuntu-latest
 
     steps:

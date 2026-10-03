@@ -1,0 +1,17 @@
+{
+  "$schema": "./ci-config.schema.json",
+  "enabled": true,
+  "description": "EntityTS CI/CD pipeline code configuration toggle. Set 'enabled: false' to disable all pipelines, or selectively toggle individual pipelines below.",
+  "pipelines": {
+    "ci": true,
+    "postgres": true,
+    "mysql": true,
+    "mssql": true,
+    "sqlite": true,
+    "databases": true,
+    "release": true,
+    "packageCheck": true,
+    "docs": true,
+    "benchmark": true
+  }
+}

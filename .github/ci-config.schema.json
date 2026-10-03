@@ -1,0 +1,60 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "CiConfig",
+  "type": "object",
+  "properties": {
+    "enabled": {
+      "type": "boolean",
+      "description": "Master killswitch to enable or disable all CI/CD pipelines through code."
+    },
+    "description": {
+      "type": "string"
+    },
+    "pipelines": {
+      "type": "object",
+      "description": "Selective per-pipeline toggles.",
+      "properties": {
+        "ci": {
+          "type": "boolean",
+          "description": "Main quality test suite workflow (Node 18/20/22 with live DB containers)."
+        },
+        "postgres": {
+          "type": "boolean",
+          "description": "PostgreSQL live integration test workflow."
+        },
+        "mysql": {
+          "type": "boolean",
+          "description": "MySQL live integration test workflow."
+        },
+        "mssql": {
+          "type": "boolean",
+          "description": "SQL Server live integration test workflow."
+        },
+        "sqlite": {
+          "type": "boolean",
+          "description": "SQLite embedded test workflow."
+        },
+        "databases": {
+          "type": "boolean",
+          "description": "Group toggle for all live database service workflows."
+        },
+        "release": {
+          "type": "boolean",
+          "description": "Automated semantic-release & npm publishing."
+        },
+        "packageCheck": {
+          "type": "boolean",
+          "description": "NPM pack dry-run distribution verification."
+        },
+        "docs": {
+          "type": "boolean",
+          "description": "Docusaurus documentation build and deployment."
+        },
+        "benchmark": {
+          "type": "boolean",
+          "description": "ORM execution comparison benchmarks."
+        }
+      }
+    }
+  }
+}

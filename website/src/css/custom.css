@@ -5,10 +5,12 @@
  */
 
 :root {
-  --ifm-font-family-base: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  --ifm-font-family-base:
+    'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
   --ifm-heading-font-family: 'Plus Jakarta Sans', var(--ifm-font-family-base);
-  --ifm-font-family-monospace: 'Fira Code', ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
-  
+  --ifm-font-family-monospace:
+    'Fira Code', ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+
   --ifm-color-primary: #3b82f6;
   --ifm-color-primary-dark: #2563eb;
   --ifm-color-primary-darker: #1d4ed8;
@@ -21,18 +23,18 @@
   --accent-purple: #8b5cf6;
   --accent-emerald: #10b981;
   --accent-amber: #f59e0b;
-  
+
   --ifm-code-font-size: 88%;
   --ifm-heading-font-weight: 700;
   --ifm-navbar-height: 4.2rem;
   --ifm-navbar-background-color: rgba(255, 255, 255, 0.85);
   --ifm-toc-border-color: rgba(0, 0, 0, 0.06);
   --ifm-card-border-radius: 16px;
-  
+
   --glass-bg: rgba(255, 255, 255, 0.75);
   --glass-border: rgba(0, 0, 0, 0.08);
   --glass-shadow: 0 10px 30px -10px rgba(0, 0, 0, 0.08);
-  
+
   --docusaurus-highlighted-code-line-bg: rgba(59, 130, 246, 0.1);
 }
 
@@ -50,11 +52,11 @@
   --ifm-background-surface-color: #0f172a;
   --ifm-navbar-background-color: rgba(9, 13, 22, 0.85);
   --ifm-toc-border-color: rgba(255, 255, 255, 0.08);
-  
+
   --glass-bg: rgba(15, 23, 42, 0.75);
   --glass-border: rgba(255, 255, 255, 0.08);
   --glass-shadow: 0 12px 35px -10px rgba(0, 0, 0, 0.5);
-  
+
   --docusaurus-highlighted-code-line-bg: rgba(56, 189, 248, 0.15);
 }
 
@@ -105,10 +107,11 @@ body {
 /* Hero Section */
 .hero--primary {
   position: relative;
-  background: radial-gradient(circle at 80% 20%, rgba(56, 189, 248, 0.15), transparent 45%),
-              radial-gradient(circle at 20% 80%, rgba(168, 85, 247, 0.12), transparent 40%),
-              radial-gradient(circle at 50% 50%, rgba(16, 185, 129, 0.08), transparent 50%),
-              var(--ifm-background-color);
+  background:
+    radial-gradient(circle at 80% 20%, rgba(56, 189, 248, 0.15), transparent 45%),
+    radial-gradient(circle at 20% 80%, rgba(168, 85, 247, 0.12), transparent 40%),
+    radial-gradient(circle at 50% 50%, rgba(16, 185, 129, 0.08), transparent 50%),
+    var(--ifm-background-color);
   padding: 6rem 0 5rem;
   text-align: center;
   overflow: hidden;
@@ -344,4 +347,3 @@ table tr:hover td {
 ::-webkit-scrollbar-thumb:hover {
   background: rgba(148, 163, 184, 0.4);
 }
-

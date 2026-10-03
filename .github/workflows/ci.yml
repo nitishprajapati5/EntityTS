@@ -7,8 +7,26 @@ on:
     branches: [main]
 
 jobs:
+  gate:
+    name: Check CI Gate
+    runs-on: ubuntu-latest
+    if: >-
+      !contains(github.event.head_commit.message, '[skip ci]') &&
+      !contains(github.event.head_commit.message, '[ci skip]') &&
+      !contains(github.event.head_commit.message, '[no ci]')
+    outputs:
+      enabled: ${{ steps.check.outputs.enabled }}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+      - name: Evaluate CI Gate
+        id: check
+        run: node scripts/ci-gate.js ci
+
   test:
     name: Node ${{ matrix.node-version }} on ${{ matrix.os }}
+    needs: gate
+    if: needs.gate.outputs.enabled == 'true'
     runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
