@@ -327,7 +327,10 @@ export abstract class DbContext {
   public set<T extends object>(entity: EntityTarget<T>): DbSet<T> {
     let existing = this._sets.get(entity);
     if (!existing) {
-      existing = new DbSet<T>(this._adapter, entity, undefined, undefined, this);
+      const defaultTracking = this._options?.queryTrackingBehavior === 'trackAll';
+      existing = new DbSet<T>(this._adapter, entity, undefined, undefined, this, {
+        tracking: defaultTracking,
+      });
       this._sets.set(entity, existing);
     }
     return existing as DbSet<T>;
@@ -513,10 +516,6 @@ export abstract class DbContext {
       },
     });
   }
-
-  // ---------------------------------------------------------------------------
-  // Prisma-style Database-Level APIs
-  // ---------------------------------------------------------------------------
 
   // ---------------------------------------------------------------------------
   // Cross-Dialect RDBMS Execution APIs

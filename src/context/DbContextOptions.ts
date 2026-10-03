@@ -18,6 +18,7 @@ import { ConnectionPoolOptions } from '../pool/IConnectionPool';
 export type NamingConvention = 'camelCase' | 'snake_case' | 'PascalCase';
 export type LogMode = boolean | 'prisma' | 'compact' | 'json' | LogFunction;
 export type LogFunction = (sql: string, params?: unknown[], durationMs?: number) => void;
+export type QueryTrackingBehavior = 'trackAll' | 'noTracking';
 
 export interface DbContextOptions {
   provider?: DbProvider;
@@ -43,4 +44,5 @@ export interface DbContextOptions {
   executionStrategyOptions?: ExecutionStrategyOptions;
   tenantId?: string | number;
   poolOptions?: ConnectionPoolOptions;
+  queryTrackingBehavior?: QueryTrackingBehavior;
 }

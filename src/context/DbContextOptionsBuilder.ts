@@ -1,4 +1,10 @@
-import { DbContextOptions, LogMode, LogFunction, NamingConvention } from './DbContextOptions';
+import {
+  DbContextOptions,
+  LogMode,
+  LogFunction,
+  NamingConvention,
+  QueryTrackingBehavior,
+} from './DbContextOptions';
 import { QueryHooks } from '../hooks/QueryHook';
 import { IQueryCache } from '../cache/IQueryCache';
 import { IDbAdapter } from '../adapters/IDbAdapter';
@@ -499,6 +505,36 @@ export class DbContextOptionsBuilder {
       retryOnDeadlocks: true,
       retryOnTransientErrors: true,
     });
+  }
+
+  /**
+   * Configures default query change tracking behavior for queries executed through this context.
+   *
+   * @param behavior - `'trackAll'` to enable automatic change tracking for all LINQ queries by default,
+   * or `'noTracking'` to require explicit `.asTracking()` on query chains.
+   * @returns `this` builder instance for chaining.
+   */
+  public useQueryTrackingBehavior(behavior: QueryTrackingBehavior): this {
+    this.options.queryTrackingBehavior = behavior;
+    return this;
+  }
+
+  /**
+   * Configures all LINQ queries to automatically track returned entities by default.
+   *
+   * @returns `this` builder instance for chaining.
+   */
+  public useTracking(): this {
+    return this.useQueryTrackingBehavior('trackAll');
+  }
+
+  /**
+   * Configures all LINQ queries to disable entity tracking by default (the recommended default for read performance).
+   *
+   * @returns `this` builder instance for chaining.
+   */
+  public useNoTracking(): this {
+    return this.useQueryTrackingBehavior('noTracking');
   }
 
   /**

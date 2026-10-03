@@ -43,12 +43,16 @@ import {
   EntityUpdated,
   EntityDeleted,
 } from '../events';
+import { UpdateSetBuilder } from './UpdateSetBuilder';
 
 export type WithLoaded<T, K extends string> = T & {
   [P in K]: P extends keyof T ? NonNullable<T[P]> : any;
 };
 
 export type EntityTarget<T = any> = (new (...args: any[]) => T) | string;
+
+export type LinqPredicate<T> =
+  Partial<T> | ((clause: WhereClause<T> & T) => void | WhereClause<T> | boolean);
 
 export interface DbSetOptions {
   withDeleted?: boolean;
@@ -59,6 +63,7 @@ export interface DbSetOptions {
   cacheKey?: string;
   includes?: string[];
   lazy?: boolean;
+  tracking?: boolean;
 }
 
 /**
@@ -586,13 +591,13 @@ export class DbSet<T extends object = any> {
    * ```
    */
   public where<K extends keyof T & string>(
-    column: K,
+    column: K | ((entity: T) => unknown),
     operator:
       '=' | '!=' | '<>' | '>' | '>=' | '<' | '<=' | 'LIKE' | 'ILIKE' | 'NOT LIKE' | 'IN' | 'NOT IN',
     value: any,
   ): DbSet<T>;
   public where(
-    column: string,
+    column: string | ((entity: T) => unknown),
     operator:
       '=' | '!=' | '<>' | '>' | '>=' | '<' | '<=' | 'LIKE' | 'ILIKE' | 'NOT LIKE' | 'IN' | 'NOT IN',
     value: any,
@@ -606,18 +611,25 @@ export class DbSet<T extends object = any> {
   /**
    * Filters records using a fluent WhereClause builder callback.
    *
-   * @param fn - Callback receiving a WhereClause builder.
+   * @param fn - Callback receiving a WhereClause builder or entity predicate `(entity: T) => boolean`.
    */
-  public where(fn: (clause: WhereClause<T>) => void | WhereClause<T>): DbSet<T>;
+  public where(fn: (clause: WhereClause<T> & T) => void | WhereClause<T> | boolean): DbSet<T>;
   public where(
-    ...conditions: (Partial<T> | ((clause: WhereClause<T>) => void | WhereClause<T>))[]
+    ...conditions: (
+      Partial<T> | ((clause: WhereClause<T> & T) => void | WhereClause<T> | boolean)
+    )[]
   ): DbSet<T>;
   public where(...args: any[]): DbSet<T> {
     const qb = this.cloneQueryBuilder();
     const where = qb.getWhereClause();
 
-    if (args.length === 3 && typeof args[0] === 'string' && typeof args[1] === 'string') {
-      const col = this.mapPropertyToColumn(args[0]);
+    if (
+      args.length === 3 &&
+      (typeof args[0] === 'string' || typeof args[0] === 'function') &&
+      typeof args[1] === 'string'
+    ) {
+      const colProp = extractColumnName(args[0]);
+      const col = this.mapPropertyToColumn(colProp);
       (where as any).addCondition(col, args[1], args[2]);
       return this.createClone(qb);
     }
@@ -625,9 +637,21 @@ export class DbSet<T extends object = any> {
     for (const arg of args) {
       if (!arg) continue;
       if (typeof arg === 'function') {
-        const result = arg(where);
+        const initialCondLength = where.conditions.length;
+        let result: any;
+        try {
+          result = arg(where);
+        } catch {
+          // arg may be an entity lambda predicate rather than WhereClause callback
+        }
         if (result instanceof WhereClause) {
           qb.where(result);
+        } else if (where.conditions.length === initialCondLength) {
+          const parsed = this.parseLambdaPredicate(arg);
+          if (parsed) {
+            const col = this.mapPropertyToColumn(parsed.property);
+            (where as any).addCondition(col, parsed.operator as any, parsed.value);
+          }
         }
       } else if (typeof arg === 'object' && arg !== null) {
         for (const [key, val] of Object.entries(arg)) {
@@ -1170,10 +1194,14 @@ export class DbSet<T extends object = any> {
     } catch (err) {
       throw DatabaseErrorTranslator.translate(err, sql, effectiveAdapter.provider);
     }
-    const entities = rows.map(r => this.mapRowToEntity(r));
+    let entities = rows.map(r => this.mapRowToEntity(r));
 
     if (this.options.includes && this.options.includes.length > 0 && entities.length > 0) {
       await this.loadIncludes(entities, this.options.includes);
+    }
+
+    if (this.options.tracking && this.context?.changeTracker) {
+      entities = entities.map(e => this.context.changeTracker.track(e, this.metadata));
     }
 
     if (cache && cacheKey && this.options.cacheTtlMs) {
@@ -1500,10 +1528,26 @@ export class DbSet<T extends object = any> {
    * }
    * ```
    */
-  public async first(predicate?: Partial<T>): Promise<T | null> {
+  public async first(predicate?: LinqPredicate<T>): Promise<T | null> {
     let set: DbSet<T> = this;
+    let inMemoryPredicate: ((entity: T) => boolean) | undefined;
     if (predicate) {
-      set = set.where(predicate);
+      if (typeof predicate === 'function') {
+        const initialCondLength = set.queryBuilder.getWhereClause().conditions.length;
+        const temp = set.where(predicate as any);
+        if (temp.queryBuilder.getWhereClause().conditions.length > initialCondLength) {
+          set = temp;
+        } else {
+          inMemoryPredicate = predicate as (entity: T) => boolean;
+        }
+      } else {
+        set = set.where(predicate);
+      }
+    }
+    if (inMemoryPredicate) {
+      const list = await set.toList();
+      const item = list.find(inMemoryPredicate);
+      return item ?? null;
     }
     const list = await set.take(1).toList();
     return list.length > 0 ? list[0] : null;
@@ -1513,7 +1557,7 @@ export class DbSet<T extends object = any> {
    * Finds the first entity matching the criteria or returns `null` if none found.
    * Alias for `first()`.
    */
-  public async firstOrDefault(predicate?: Partial<T>): Promise<T | null> {
+  public async firstOrDefault(predicate?: LinqPredicate<T>): Promise<T | null> {
     return this.first(predicate);
   }
 
@@ -1529,7 +1573,7 @@ export class DbSet<T extends object = any> {
    * const user = await context.users.firstOrThrow({ email });
    * ```
    */
-  public async firstOrThrow(predicate?: Partial<T>): Promise<T> {
+  public async firstOrThrow(predicate?: LinqPredicate<T>): Promise<T> {
     const item = await this.first(predicate);
     if (!item) {
       throw new EntityNotFoundException(`Entity '${this.tableName}' not found matching predicate.`);
@@ -1549,16 +1593,46 @@ export class DbSet<T extends object = any> {
    * const uniqueSetting = await context.settings.single({ key: 'site_name' });
    * ```
    */
-  public async single(predicate?: Partial<T>): Promise<T | null> {
+  public async single(predicate?: LinqPredicate<T>): Promise<T | null> {
     let set: DbSet<T> = this;
+    let inMemoryPredicate: ((entity: T) => boolean) | undefined;
     if (predicate) {
-      set = set.where(predicate);
+      if (typeof predicate === 'function') {
+        const initialCondLength = set.queryBuilder.getWhereClause().conditions.length;
+        const temp = set.where(predicate as any);
+        if (temp.queryBuilder.getWhereClause().conditions.length > initialCondLength) {
+          set = temp;
+        } else {
+          inMemoryPredicate = predicate as (entity: T) => boolean;
+        }
+      } else {
+        set = set.where(predicate);
+      }
+    }
+    if (inMemoryPredicate) {
+      const list = await set.toList();
+      const matched = list.filter(inMemoryPredicate);
+      if (matched.length > 1) {
+        throw new DbException(`Sequence contains more than one element in '${this.tableName}'.`);
+      }
+      return matched.length === 1 ? matched[0] : null;
     }
     const list = await set.take(2).toList();
     if (list.length > 1) {
       throw new DbException(`Sequence contains more than one element in '${this.tableName}'.`);
     }
     return list.length === 1 ? list[0] : null;
+  }
+
+  /**
+   * Asserts that at most one entity matches the criteria and returns it, or returns `null` if none found.
+   * Alias for `single()`.
+   *
+   * @param predicate - Filter criteria object, WhereClause builder callback, or lambda predicate.
+   * @returns The single matching entity or `null`.
+   */
+  public async singleOrDefault(predicate?: LinqPredicate<T>): Promise<T | null> {
+    return this.single(predicate);
   }
 
   /**
@@ -1574,7 +1648,7 @@ export class DbSet<T extends object = any> {
    * const account = await context.accounts.singleOrThrow({ accountNumber: 'ACC-12345' });
    * ```
    */
-  public async singleOrThrow(predicate?: Partial<T>): Promise<T> {
+  public async singleOrThrow(predicate?: LinqPredicate<T>): Promise<T> {
     const item = await this.single(predicate);
     if (!item) {
       throw new EntityNotFoundException(`Entity '${this.tableName}' not found matching predicate.`);
@@ -1770,9 +1844,18 @@ export class DbSet<T extends object = any> {
    * const hasOverdueInvoices = await context.invoices.any({ status: 'overdue' });
    * ```
    */
-  public async any(predicate?: Partial<T> | ((builder: WhereClause<T>) => void)): Promise<boolean> {
+  public async any(predicate?: LinqPredicate<T>): Promise<boolean> {
     if (!predicate) {
       return (await this.count()) > 0;
+    }
+    if (typeof predicate === 'function') {
+      const initialCondLength = this.queryBuilder.getWhereClause().conditions.length;
+      const temp = this.where(predicate as any);
+      if (temp.queryBuilder.getWhereClause().conditions.length > initialCondLength) {
+        return (await temp.count()) > 0;
+      }
+      const list = await this.toList();
+      return list.some(predicate as (entity: T) => boolean);
     }
     return (await this.count(predicate)) > 0;
   }
@@ -1786,11 +1869,22 @@ export class DbSet<T extends object = any> {
    * @example
    * ```ts
    * const allPaid = await context.orders.all({ paymentStatus: 'paid' });
+   * const allVerified = await context.users.all(u => u.isVerified === true);
    * ```
    */
-  public async all(predicate: Partial<T> | ((builder: WhereClause<T>) => void)): Promise<boolean> {
+  public async all(predicate: LinqPredicate<T>): Promise<boolean> {
     const total = await this.count();
     if (total === 0) return true;
+    if (typeof predicate === 'function') {
+      const initialCondLength = this.queryBuilder.getWhereClause().conditions.length;
+      const temp = this.where(predicate as any);
+      if (temp.queryBuilder.getWhereClause().conditions.length > initialCondLength) {
+        const matching = await temp.count();
+        return matching === total;
+      }
+      const list = await this.toList();
+      return list.every(predicate as (entity: T) => boolean);
+    }
     const matching = await this.count(predicate);
     return matching === total;
   }
@@ -1848,6 +1942,37 @@ export class DbSet<T extends object = any> {
   }
 
   /**
+   * Enables change tracking for entities returned by this query.
+   * Property mutations on returned entities will be detected by the change tracker and persisted via `context.saveChanges()`.
+   *
+   * @usecase Query entities intended for interactive modification and unit-of-work persistence.
+   * @returns A new cloned `DbSet` with change tracking enabled.
+   * @example
+   * ```ts
+   * const users = await context.users.asTracking().where(u => u.isActive, '=', true).toList();
+   * users[0].role = 'admin';
+   * await context.saveChanges();
+   * ```
+   */
+  public asTracking(): DbSet<T> {
+    return this.createClone(undefined, { ...this.options, tracking: true });
+  }
+
+  /**
+   * Disables change tracking for entities returned by this query for improved read-only performance.
+   *
+   * @usecase High-performance read-only queries, reporting, or large list lookups where entity instances will not be modified.
+   * @returns A new cloned `DbSet` with change tracking disabled.
+   * @example
+   * ```ts
+   * const readOnlyUsers = await context.users.asNoTracking().toList();
+   * ```
+   */
+  public asNoTracking(): DbSet<T> {
+    return this.createClone(undefined, { ...this.options, tracking: false });
+  }
+
+  /**
    * Checks whether any record matching the predicate exists.
    *
    * @usecase Use this for fast existence checks, e.g. checking if an email is already registered during signup.
@@ -1900,6 +2025,76 @@ export class DbSet<T extends object = any> {
   private resolveAggregateSelector(selector: ColumnKey<T> | ((entity: T) => unknown)): string {
     const prop = this.resolvePropertySelector(selector);
     return prop || '*';
+  }
+
+  private parseLambdaPredicate(
+    fn: Function,
+  ): { property: string; operator: string; value: any } | null {
+    try {
+      const str = fn.toString().trim();
+      const arrowMatch = str.match(
+        /^(?:\(([^)]+)\)|([a-zA-Z0-9_$]+))\s*=>\s*(?:\{\s*return\s+)?(.+?)(?:\s*;?\s*\}?)?$/,
+      );
+      const funcMatch =
+        !arrowMatch &&
+        str.match(/^function\s*(?:\w+)?\s*\(([^)]+)\)\s*\{\s*return\s+(.+?);?\s*\}$/);
+
+      const param = arrowMatch
+        ? (arrowMatch[1] || arrowMatch[2]).trim()
+        : funcMatch
+          ? funcMatch[1].trim()
+          : null;
+      const body = arrowMatch ? arrowMatch[3].trim() : funcMatch ? funcMatch[2].trim() : null;
+
+      if (!param || !body) return null;
+
+      // Boolean shorthand: u => u.isActive or u => !u.isActive
+      const boolMatch = body.match(new RegExp(`^(!?)${param}\\.([a-zA-Z0-9_$]+)$`));
+      if (boolMatch) {
+        const isNegated = boolMatch[1] === '!';
+        const prop = boolMatch[2];
+        return { property: prop, operator: '=', value: !isNegated };
+      }
+
+      // Comparison: u => u.prop === val, >, >=, <, <=, !=, !==
+      const opMatch = body.match(
+        new RegExp(`^${param}\\.([a-zA-Z0-9_$]+)\\s*(===|==|!==|!=|>=|<=|>|<)\\s*(.+)$`),
+      );
+      if (!opMatch) return null;
+
+      const prop = opMatch[1];
+      const jsOp = opMatch[2];
+      const rawVal = opMatch[3].trim();
+
+      let op = '=';
+      if (jsOp === '===' || jsOp === '==') op = '=';
+      else if (jsOp === '!==' || jsOp === '!=') op = '<>';
+      else if (jsOp === '>=') op = '>=';
+      else if (jsOp === '<=') op = '<=';
+      else if (jsOp === '>') op = '>';
+      else if (jsOp === '<') op = '<';
+
+      let val: any;
+      if (rawVal === 'true') val = true;
+      else if (rawVal === 'false') val = false;
+      else if (rawVal === 'null') val = null;
+      else if (rawVal === 'undefined') val = undefined;
+      else if (/^-?\d+(?:\.\d+)?$/.test(rawVal)) val = Number(rawVal);
+      else if (
+        (rawVal.startsWith("'") && rawVal.endsWith("'")) ||
+        (rawVal.startsWith('"') && rawVal.endsWith('"')) ||
+        (rawVal.startsWith('`') && rawVal.endsWith('`'))
+      ) {
+        val = rawVal.slice(1, -1);
+      } else {
+        // Not a static literal — likely a closure variable or outer scope expression
+        return null;
+      }
+
+      return { property: prop, operator: op, value: val };
+    } catch {
+      return null;
+    }
   }
 
   // --- Change Tracking ---
@@ -2280,6 +2475,102 @@ export class DbSet<T extends object = any> {
   }
 
   /**
+   * Performs an immediate bulk UPDATE operation on the entities matching the current query filter.
+   * Updates are compiled directly to SQL UPDATE without loading records into memory.
+   *
+   * @usecase Direct database bulk update without loading entities into memory or tracking them.
+   * @param patchOrSetter - Partial entity object or a builder function using UpdateSetBuilder.
+   * @returns The number of rows affected.
+   * @example
+   * ```ts
+   * // Using partial object
+   * const affected = await db.users
+   *   .where(u => u.role, '=', 'guest')
+   *   .executeUpdate({ role: 'member' });
+   *
+   * // Using builder callback
+   * const affected2 = await db.users
+   *   .where(u => u.status, '=', 'inactive')
+   *   .executeUpdate(s => s.set(u => u.status, 'archived'));
+   * ```
+   */
+  public async executeUpdate(
+    patchOrSetter: Partial<T> | ((setter: UpdateSetBuilder<T>) => void | UpdateSetBuilder<T>),
+  ): Promise<number> {
+    this.ensureNotView('executeUpdate');
+
+    let rawData: Record<string, unknown>;
+    if (typeof patchOrSetter === 'function') {
+      const builder = new UpdateSetBuilder<T>();
+      const res = patchOrSetter(builder);
+      rawData = (res instanceof UpdateSetBuilder ? res : builder).getData();
+    } else {
+      rawData = { ...patchOrSetter } as Record<string, unknown>;
+    }
+
+    if (Object.keys(rawData).length === 0) {
+      return 0;
+    }
+
+    if (typeof this.entityTarget === 'function') {
+      ValidationEngine.validateOrThrow(rawData, this.entityTarget as Function, this.tableName, {
+        partial: true,
+      });
+    }
+
+    await this.executeHooks(rawData, 'beforeUpdate');
+
+    if (
+      this.metadata?.updatedAtProperty &&
+      rawData[this.metadata.updatedAtProperty] === undefined
+    ) {
+      rawData[this.metadata.updatedAtProperty] = new Date();
+    }
+
+    const updateData = this.mapEntityToRow(rawData as Partial<T>);
+    const qb = this.prepareFinalQueryBuilder();
+    const { sql, params } = qb.toUpdateSql(updateData);
+    const effectiveAdapter = this.resolveEffectiveAdapter(qb);
+
+    let res;
+    try {
+      res = await effectiveAdapter.executeNonQuery(sql, params, this.transaction);
+    } catch (err) {
+      throw DatabaseErrorTranslator.translate(err, sql, effectiveAdapter.provider);
+    }
+
+    if (this.context?.cache && typeof (this.context.cache as any).clear === 'function') {
+      await (this.context.cache as any).clear();
+    }
+
+    await this.emitLifecycleEvent('updated', rawData);
+
+    return res.rowsAffected;
+  }
+
+  /**
+   * Updates records matching a filter predicate in a single statement.
+   *
+   * @param predicate - Filter criteria object, WhereClause builder, or lambda predicate.
+   * @param patchOrSetter - Fields to update or UpdateSetBuilder callback.
+   * @returns The number of rows affected.
+   * @example
+   * ```ts
+   * const count = await db.users.updateWhere({ role: 'guest' }, { role: 'member' });
+   * const count2 = await db.users.updateWhere(
+   *   w => w.eq('role', 'guest'),
+   *   s => s.set('role', 'member')
+   * );
+   * ```
+   */
+  public async updateWhere(
+    predicate: LinqPredicate<T>,
+    patchOrSetter: Partial<T> | ((setter: UpdateSetBuilder<T>) => void | UpdateSetBuilder<T>),
+  ): Promise<number> {
+    return this.where(predicate as any).executeUpdate(patchOrSetter);
+  }
+
+  /**
    * Performs an atomic native database upsert using conflict target and update payload,
    * or a select-and-insert/update fallback based on primary keys.
    *
@@ -2652,51 +2943,37 @@ export class DbSet<T extends object = any> {
   }
 
   /**
-   * Deletes (or soft-deletes if configured) all records matching the specified predicate.
+   * Performs an immediate bulk DELETE operation on the entities matching the current query filter.
+   * Respects entity soft-delete configuration unless `hardDelete: true` is specified.
    *
-   * @usecase Use this to remove multiple records satisfying a filter (e.g. deleting expired sessions or unverified temp accounts).
-   * @param predicate - Filter criteria matching the records to remove.
-   * @returns A Promise resolving to the number of rows affected.
+   * @usecase Direct database bulk delete without loading entities into memory.
+   * @param options - Optional flags (e.g. `{ hardDelete: true }`).
+   * @returns The number of rows affected.
    * @example
    * ```ts
-   * const deletedCount = await context.sessions.removeWhere({ isExpired: true });
+   * const count = await db.users
+   *   .where(u => u.status, '=', 'banned')
+   *   .executeDelete();
    * ```
    */
-  public async removeWhere(predicate: Partial<T>): Promise<number> {
-    if (this.metadata?.softDelete) {
+  public async executeDelete(options?: { hardDelete?: boolean }): Promise<number> {
+    this.ensureNotView('executeDelete');
+    const qb = this.prepareFinalQueryBuilder();
+    const effectiveAdapter = this.resolveEffectiveAdapter(qb);
+
+    if (this.metadata?.softDelete && !options?.hardDelete && !this.options.withDeleted) {
       const colName = this.metadata.softDelete.column;
       const now = new Date();
       let rowsAffected = 0;
 
-      if (
-        this.adapter.provider === 'mock' &&
-        typeof (this.adapter as any).getTableData === 'function'
-      ) {
-        const rows = (this.adapter as any).getTableData(this.tableName) || [];
-        for (const row of rows) {
-          let matches = true;
-          for (const [key, val] of Object.entries(predicate)) {
-            const col = this.mapPropertyToColumn(key);
-            const rKey = Object.keys(row).find(k => k.toLowerCase() === col.toLowerCase());
-            if (!rKey || String(row[rKey]) !== String(val)) {
-              matches = false;
-              break;
-            }
-          }
-          if (matches) {
-            row[colName] = now;
-            rowsAffected++;
-          }
-        }
-      } else {
-        const qb = new QueryBuilder(this.adapter, this.tableName);
-        for (const [key, val] of Object.entries(predicate)) {
-          qb.getWhereClause().eq(this.mapPropertyToColumn(key), val);
-        }
-        const { sql, params } = qb.toUpdateSql({ [colName]: now });
-        const res = await this.adapter.executeNonQuery(sql, params, this.transaction);
-        rowsAffected = res.rowsAffected;
+      const { sql, params } = qb.toUpdateSql({ [colName]: now });
+      let res;
+      try {
+        res = await effectiveAdapter.executeNonQuery(sql, params, this.transaction);
+      } catch (err) {
+        throw DatabaseErrorTranslator.translate(err, sql, effectiveAdapter.provider);
       }
+      rowsAffected = res.rowsAffected;
 
       // Cascade soft-delete down to grandchildren if this child has cascade: true
       if (
@@ -2704,9 +2981,7 @@ export class DbSet<T extends object = any> {
         this.metadata.relations &&
         this.metadata.relations.size > 0
       ) {
-        const matchingRecords = await this.where(predicate as any)
-          .withDeleted()
-          .toList();
+        const matchingRecords = await this.withDeleted().toList();
         const pkProp = this.getPrimaryKeyProperty();
         for (const childRec of matchingRecords) {
           const childId = (childRec as any)[pkProp];
@@ -2732,10 +3007,42 @@ export class DbSet<T extends object = any> {
         }
       }
 
+      if (this.context?.cache && typeof (this.context.cache as any).clear === 'function') {
+        await (this.context.cache as any).clear();
+      }
+
       return rowsAffected;
-    } else {
-      return this.hardRemoveWhere(predicate);
     }
+
+    const { sql, params } = qb.toDeleteSql();
+    let res;
+    try {
+      res = await effectiveAdapter.executeNonQuery(sql, params, this.transaction);
+    } catch (err) {
+      throw DatabaseErrorTranslator.translate(err, sql, effectiveAdapter.provider);
+    }
+
+    if (this.context?.cache && typeof (this.context.cache as any).clear === 'function') {
+      await (this.context.cache as any).clear();
+    }
+
+    return res.rowsAffected;
+  }
+
+  /**
+   * Deletes (or soft-deletes if configured) all records matching the specified predicate.
+   *
+   * @usecase Use this to remove multiple records satisfying a filter (e.g. deleting expired sessions or unverified temp accounts).
+   * @param predicate - Filter criteria matching the records to remove (object, WhereClause callback, or lambda predicate).
+   * @returns A Promise resolving to the number of rows affected.
+   * @example
+   * ```ts
+   * const deletedCount = await context.sessions.removeWhere({ isExpired: true });
+   * const deletedCount2 = await context.sessions.removeWhere(w => w.lt('expiresAt', new Date()));
+   * ```
+   */
+  public async removeWhere(predicate: LinqPredicate<T>): Promise<number> {
+    return this.where(predicate as any).executeDelete();
   }
 
   /**

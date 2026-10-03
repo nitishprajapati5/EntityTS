@@ -170,7 +170,7 @@ const salesByDepartment = await db.orders
 
 ---
 
-## ⚡ Performance Modifiers
+## ⚡ Performance Modifiers & Tracking
 
 ```ts
 // AsNoTracking: Bypass change tracking for read-only query performance
@@ -179,6 +179,55 @@ const readOnlyData = await db.users
   .where(u => u.isActive, '=', true)
   .toList();
 
+// AsTracking: Explicitly opt-in to ChangeTracker observation
+const trackedUsers = await db.users
+  .asTracking()
+  .where(u => u.role, '=', 'member')
+  .toList();
+
+trackedUsers[0].role = 'admin';
+await db.saveChanges(); // Automatically detects mutations and persists SQL UPDATE
+
 // Distinct: Eliminate duplicate rows
 const uniqueRoles = await db.users.select('role').distinct().toList();
+```
+
+---
+
+## ⚡ Direct Batch Mutations (`executeUpdate` & `executeDelete`)
+
+Execute high-performance bulk updates and bulk deletes directly on the database server in a single SQL statement without loading entities into memory or attaching them to the ChangeTracker (similar to EF Core's `ExecuteUpdate` & `ExecuteDelete`).
+
+### Bulk Updates with `executeUpdate`
+
+Pass either a partial entity patch or a fluent `UpdateSetBuilder` callback:
+
+```ts
+// 1. Partial object patch
+const updatedCount = await db.users
+  .where(u => u.lastLoginAt, '<', thirtyDaysAgo)
+  .executeUpdate({ isActive: false });
+
+// 2. Fluent UpdateSetBuilder callback
+await db.users
+  .where(u => u.department, '=', 'Sales')
+  .executeUpdate(s => s.set(u => u.bonusEligible, true).set(u => u.reviewStatus, 'approved'));
+
+// 3. Shorthand updateWhere on DbSet
+await db.users.updateWhere(u => u.role === 'guest', { isActive: false });
+```
+
+### Bulk Deletions with `executeDelete`
+
+Delete all matching records directly at the database level. If an entity uses `@SoftDelete()`, `executeDelete()` automatically issues a soft-delete update instead of a physical deletion:
+
+```ts
+// Direct batch delete on LINQ query
+const deletedCount = await db.notifications
+  .where(n => n.isRead, '=', true)
+  .where(n => n.createdAt, '<', cutoffDate)
+  .executeDelete();
+
+// Shorthand removeWhere on DbSet
+await db.logs.removeWhere(l => l.level === 'debug');
 ```
