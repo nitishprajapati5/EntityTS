@@ -14,11 +14,18 @@ module.exports = {
       {
         preset: 'angular',
         releaseRules: [
+          { breaking: true, release: 'major' },
+          { revert: true, release: 'patch' },
           { type: 'feat', release: 'minor' },
           { type: 'fix', release: 'patch' },
           { type: 'perf', release: 'patch' },
           { type: 'refactor', release: 'patch' },
-          { breaking: true, release: 'major' },
+          { type: 'docs', release: 'patch' },
+          { type: 'chore', release: 'patch' },
+          { type: 'build', release: 'patch' },
+          { type: 'ci', release: 'patch' },
+          { type: 'style', release: 'patch' },
+          { type: 'test', release: 'patch' },
         ],
       },
     ],
@@ -37,7 +44,7 @@ module.exports = {
     [
       '@semantic-release/npm',
       {
-        npmPublish: publishToNpm,
+        npmPublish: true,
       },
     ],
     [
