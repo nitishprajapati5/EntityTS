@@ -1,3 +1,9 @@
+# [1.4.0](https://github.com/nitishprajapati5/EntityTS/compare/v1.3.0...v1.4.0) (2026-10-03)
+
+### Features
+
+- enable automatic npm publishing for all commit types on main ([a17a809](https://github.com/nitishprajapati5/EntityTS/commit/a17a8095eba2507f0e1174235a8761ff4dd7e8a4))
+
 # [1.3.0](https://github.com/nitishprajapati5/EntityTS/compare/v1.2.0...v1.3.0) (2026-10-03)
 
 ### Features
