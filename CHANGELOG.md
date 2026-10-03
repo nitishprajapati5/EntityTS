@@ -1,3 +1,9 @@
+# [1.3.0](https://github.com/nitishprajapati5/EntityTS/compare/v1.2.0...v1.3.0) (2026-10-03)
+
+### Features
+
+- add support for GraphQL, tRPC, NoSQL adapters, caching, and advanced testing utilities ([a75fe1a](https://github.com/nitishprajapati5/EntityTS/commit/a75fe1af705e5c00d2968037dce6e52aacf0b73a))
+
 # [1.2.0](https://github.com/nitishprajapati5/EntityTS/compare/v1.1.1...v1.2.0) (2026-10-03)
 
 ### Features
