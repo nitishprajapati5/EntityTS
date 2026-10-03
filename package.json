@@ -45,6 +45,12 @@
       "import": "./dist/esm/benchmark/index.js",
       "require": "./dist/benchmark/index.js",
       "default": "./dist/benchmark/index.js"
+    },
+    "./nosql": {
+      "types": "./dist/nosql/index.d.ts",
+      "import": "./dist/esm/nosql/index.js",
+      "require": "./dist/nosql/index.js",
+      "default": "./dist/nosql/index.js"
     }
   },
   "bin": {

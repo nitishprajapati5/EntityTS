@@ -61,3 +61,5 @@ export * from './events';
 export * from './pool';
 // Unit of Work & Aggregate Root Pattern
 export * from './uow';
+// NoSQL & Document Adapters (MongoDB, DynamoDB, etc.)
+export * from './nosql';

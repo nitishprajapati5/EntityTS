@@ -4,7 +4,7 @@ import * as fs from 'fs';
 import * as path from 'path';
 
 export interface DriverPackageInfo {
-  provider: DbProvider;
+  provider: DbProvider | string;
   packageName: string;
   displayName: string;
   importSpecifier: string;
@@ -86,6 +86,15 @@ export const DRIVER_REGISTRY: Record<string, DriverPackageInfo> = {
     typesPackage: '@types/pg',
     exclusiveNotes: "Do NOT install 'mssql'; only 'pg' is required for Supabase.",
   },
+  mongodb: {
+    provider: 'mongodb' as any,
+    packageName: 'mongodb',
+    importSpecifier: 'mongodb',
+    displayName: 'MongoDB',
+    typesPackage: '@types/mongodb',
+    exclusiveNotes:
+      "Do NOT install relational database packages; only 'mongodb' is required for MongoDB.",
+  },
 };
 
 /**
@@ -151,6 +160,9 @@ export function normalizeProvider(name: string): DbProvider | undefined {
   if (lower === 'supabase') {
     return 'supabase';
   }
+  if (lower === 'mongodb' || lower === 'mongo') {
+    return 'mongodb' as any;
+  }
   return undefined;
 }
 
@@ -161,7 +173,7 @@ const DRIVER_MODULE_CACHE = new Map<string, any>();
  * if the package is not installed in the consuming application.
  */
 export async function loadDriver<T = any>(
-  provider: DbProvider,
+  provider: DbProvider | string,
   importSpecifier?: string,
 ): Promise<T> {
   const info = DRIVER_REGISTRY[provider];
