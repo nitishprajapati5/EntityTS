@@ -26,6 +26,9 @@ Entity models are standard TypeScript classes decorated with EntityTS metadata a
 | `@HasMany(() => Target, 'fk')`         | One-to-Many relationship                   |
 | `@BelongsTo(() => Target, 'fk')`       | Many-to-One relationship                   |
 | `@HasOne(() => Target, 'fk')`          | One-to-One relationship                    |
+| `@OneToOne(() => Target, options)`     | One-to-One with cascade options            |
+| `@OneToMany(() => Target, options)`    | One-to-Many with cascade options           |
+| `@ManyToOne(() => Target, options)`    | Many-to-One with cascade options           |
 
 ---
 
@@ -67,7 +70,56 @@ export class User {
   @Version()
   version!: number;
 
-  @HasMany(() => Post, 'authorId')
+  @OneToMany(() => Post, { foreignKey: 'authorId', cascade: ['insert', 'update', 'delete'] })
   posts?: Post[];
 }
 ```
+
+---
+
+## Cascade Mutations
+
+EntityTS provides full lifecycle cascade handling for `@OneToOne`, `@OneToMany`, and `@ManyToOne` relationships via the Unit of Work:
+
+```ts
+import { Entity, PrimaryKey, Column, OneToMany, ManyToOne } from 'entityts';
+
+@Entity({ tableName: 'orders' })
+export class Order {
+  @PrimaryKey({ autoIncrement: true })
+  id!: number;
+
+  @Column()
+  orderNumber!: string;
+
+  @OneToMany(() => OrderItem, {
+    foreignKey: 'orderId',
+    cascade: ['insert', 'update', 'delete'],
+  })
+  items!: OrderItem[];
+}
+
+@Entity({ tableName: 'order_items' })
+export class OrderItem {
+  @PrimaryKey({ autoIncrement: true })
+  id!: number;
+
+  @Column()
+  orderId!: number;
+
+  @Column()
+  productName!: string;
+
+  @Column()
+  price!: number;
+
+  @ManyToOne(() => Order, { foreignKey: 'orderId' })
+  order?: Order;
+}
+```
+
+When saving the parent entity through `DbContext` or `UnitOfWork`:
+
+- **`cascade: ['insert']`**: Any newly appended child entities are automatically assigned the parent's generated primary key and inserted.
+- **`cascade: ['update']`**: Modified child entities are automatically updated in the same transaction.
+- **`cascade: ['delete']`**: Deleting the parent automatically deletes all referenced child entities in foreign-key dependency order.

@@ -28,7 +28,14 @@ const sidebars: SidebarsConfig = {
         'querying/pagination',
         'querying/relations-and-includes',
         'querying/aggregations-and-grouping',
+        'querying/window-functions',
       ],
+    },
+    {
+      type: 'category',
+      label: 'NoSQL & Document DBs',
+      collapsed: false,
+      items: ['nosql/overview-and-adapters', 'nosql/document-linq-queries'],
     },
     {
       type: 'category',
@@ -38,8 +45,12 @@ const sidebars: SidebarsConfig = {
         'advanced/transactions',
         'advanced/stored-procedures',
         'advanced/locking',
+        'advanced/caching',
+        'advanced/realtime-and-cdc',
+        'advanced/graphql-and-trpc',
         'advanced/vector-embeddings',
         'advanced/idempotency-and-outbox',
+        'advanced/testing-testkit',
       ],
     },
     {
