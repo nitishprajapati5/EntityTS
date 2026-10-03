@@ -12,7 +12,7 @@ Get up and running with **EntityTS** in your TypeScript project in just a few si
 
 ## 1. Installation
 
-Install `entityts` and its required peer dependency `reflect-metadata`:
+Install `entityTS` and its required peer dependency `reflect-metadata`:
 
 ```bash
 npm install entityts reflect-metadata

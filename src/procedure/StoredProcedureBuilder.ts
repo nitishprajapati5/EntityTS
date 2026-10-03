@@ -355,7 +355,7 @@ export class StoredProcedureBuilder {
    * **SQL Server (MSSQL):**
    * ```ts
    * const { out } = await context.procedure('usp_RegisterAccount')
-   *   .input({ Email: 'dev@entityts.org', PasswordHash: '...' })
+   *   .input({ Email: 'dev@entityTS.org', PasswordHash: '...' })
    *   .output<{ AccountId: number; ActivationToken: string }>()
    *   .run();
    * console.log('Created ID:', out.AccountId);
@@ -364,7 +364,7 @@ export class StoredProcedureBuilder {
    * **MySQL:**
    * ```ts
    * const { out } = await context.procedure('sp_register_account')
-   *   .input({ p_email: 'dev@entityts.org', p_hash: '...' })
+   *   .input({ p_email: 'dev@entityTS.org', p_hash: '...' })
    *   .output<{ out_account_id: number; out_token: string }>()
    *   .run();
    * ```
@@ -372,7 +372,7 @@ export class StoredProcedureBuilder {
    * **PostgreSQL:**
    * ```ts
    * const { out } = await context.procedure('sp_register_account')
-   *   .input({ in_email: 'dev@entityts.org', in_hash: '...' })
+   *   .input({ in_email: 'dev@entityTS.org', in_hash: '...' })
    *   .output<{ out_account_id: number }>()
    *   .run();
    * ```

@@ -221,11 +221,17 @@ export class QueryBuilder<T = any> {
    * Attaches a `WhereClause` builder containing filter conditions.
    *
    * @usecase Set the WHERE clause filter tree on this query.
-   * @param where - The `WhereClause` instance.
+   * @param where - The `WhereClause` instance or a callback that receives a fresh `WhereClause`.
    * @returns `this` builder instance for chaining.
    */
-  public where(where: WhereClause<T>): this {
-    this._whereClause = where;
+  public where(where: WhereClause<T> | ((w: WhereClause<T>) => void)): this {
+    if (typeof where === 'function') {
+      const clause = new WhereClause<T>();
+      where(clause);
+      this._whereClause = clause;
+    } else {
+      this._whereClause = where;
+    }
     return this;
   }
 

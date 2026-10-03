@@ -38,7 +38,7 @@ interface PrismaEnum {
 
 export class PrismaImporter {
   /**
-   * Imports a schema.prisma string and translates it into entityts entities and DbContext.
+   * Imports a schema.prisma string and translates it into entityTS entities and DbContext.
    */
   public static importSchema(prismaSchema: string, contextName = 'AppDbContext'): ImportResult {
     const enums: PrismaEnum[] = [];

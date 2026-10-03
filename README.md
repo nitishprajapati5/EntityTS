@@ -50,7 +50,7 @@
 - 🚀 **100% Native Execution Engine**: No Knex, no external query builder dependencies. Proprietary cross-dialect AST SQL compiler.
 - 🔍 **Prisma-Grade Developer Ergonomics**: Keyset cursor pagination, nested `.include()` eager loading, `$queryRaw`, soft deletes, and automatic audit fields.
 - 🏛️ **Flexible Architectures**: Native support for **Application-Wide Singleton** (one connection pool shared across your server) or **Scoped Per-Request** instances.
-- ⚡ **High-Throughput Execution & Benchmarking**: Built-in comprehensive benchmark suite profiling raw SQL, DbSet LINQ, bulk operations, and stored procedures (`npm run benchmark` or `entityts benchmark`).
+- ⚡ **High-Throughput Execution & Benchmarking**: Built-in comprehensive benchmark suite profiling raw SQL, DbSet LINQ, bulk operations, and stored procedures (`npm run benchmark` or `entityTS benchmark`).
 
 ---
 
@@ -70,30 +70,30 @@ bun add entityts reflect-metadata
 
 ### Install ONLY the Database Driver You Need
 
-`entityts` guarantees **driver isolation**. It does **not** install unused database drivers into your project.
+`entityTS` guarantees **driver isolation**. It does **not** install unused database drivers into your project.
 
 Use the built-in CLI tool to install the driver for your specific database:
 
 ```bash
 # Microsoft SQL Server (installs mssql only — NEVER touches pg)
-npx entityts add mssql
+npx entityTS add mssql
 
 # PostgreSQL (installs pg only — NEVER touches mssql)
-npx entityts add postgres
+npx entityTS add postgres
 
 # MySQL / MariaDB (installs mysql2 only)
-npx entityts add mysql
+npx entityTS add mysql
 
 # SQLite (installs better-sqlite3 only)
-npx entityts add sqlite
+npx entityTS add sqlite
 
 # Serverless (Turso, Neon, PlanetScale)
-npx entityts add turso
-npx entityts add neon
-npx entityts add planetscale
+npx entityTS add turso
+npx entityTS add neon
+npx entityTS add planetscale
 ```
 
-> 💡 **Driver Isolation Guard**: If your `DbContext` is configured for SQL Server (`mssql`), running `entityts add postgres` will automatically warn and block to prevent accidental package bloat.
+> 💡 **Driver Isolation Guard**: If your `DbContext` is configured for SQL Server (`mssql`), running `entityTS add postgres` will automatically warn and block to prevent accidental package bloat.
 
 ### Enable TypeScript Decorators
 
@@ -253,7 +253,7 @@ options.usePlanetScale({
 
 ## Stored Procedures (Single & Multiple Tables)
 
-Stored procedures are first-class citizens in `entityts`.
+Stored procedures are first-class citizens in `entityTS`.
 
 ### 1. Basic Procedure Execution
 
@@ -278,7 +278,7 @@ const { rowsAffected, returnValue } = await db
 
 ### Multiple Result Sets (Multiple Tables)
 
-When a stored procedure executes multiple `SELECT` statements, `entityts` returns the tables as a strongly typed tuple via `.queryMultiple<[T1, T2]>()`:
+When a stored procedure executes multiple `SELECT` statements, `entityTS` returns the tables as a strongly typed tuple via `.queryMultiple<[T1, T2]>()`:
 
 ```typescript
 // Stored procedure executing 3 SELECT queries:
@@ -459,7 +459,7 @@ const users = await db.users.include({ orders: true, profile: false }).toList();
 
 ## Change Tracking & Entity Mutations
 
-`entityts` features transparent Proxy-based change tracking:
+`entityTS` features transparent Proxy-based change tracking:
 
 ```typescript
 // 1. Fetch and track an entity
@@ -642,23 +642,23 @@ export class UsersService {
 
 ## EntityTS CLI Suite
 
-`entityts` provides a full-featured CLI tool for migrations, benchmarks, and reverse engineering.
+`entityTS` provides a full-featured CLI tool for migrations, benchmarks, and reverse engineering.
 
 ```bash
-entityts <command> [options]
+entityTS <command> [options]
 ```
 
 ### 1. Driver Management
 
 ```bash
 # Install ONLY the package required for your database
-npx entityts add mssql
-npx entityts add postgres
-npx entityts add mysql
-npx entityts add sqlite
+npx entityTS add mssql
+npx entityTS add postgres
+npx entityTS add mysql
+npx entityTS add sqlite
 
 # Initialize project with DbContext and install chosen driver
-npx entityts init --db mssql
+npx entityTS init --db mssql
 ```
 
 ### 2. Execution Benchmarks
@@ -670,13 +670,13 @@ Run the built-in execution benchmark suite to measure query compilation, hydrati
 npm run benchmark
 
 # Or via CLI
-npx entityts benchmark --iterations 500
+npx entityTS benchmark --iterations 500
 
 # Filter specific scenario categories
-npx entityts benchmark --filter "Raw SQL|DbSet Query"
+npx entityTS benchmark --filter "Raw SQL|DbSet Query"
 
 # Output in JSON format
-npx entityts benchmark --json
+npx entityTS benchmark --json
 ```
 
 Includes:
@@ -692,16 +692,16 @@ Includes:
 
 ```bash
 # Push entity metadata directly to database (ideal for development)
-npx entityts db:push --context src/database/AppDbContext.ts
+npx entityTS db:push --context src/database/AppDbContext.ts
 
 # Dry run — inspect DDL statements without applying
-npx entityts db:push --context src/database/AppDbContext.ts --dry-run
+npx entityTS db:push --context src/database/AppDbContext.ts --dry-run
 
 # Generate migration file from entity changes
-npx entityts db:migrate:generate AddUserColumns --context src/database/AppDbContext.ts
+npx entityTS db:migrate:generate AddUserColumns --context src/database/AppDbContext.ts
 
 # Scaffold a blank migration file
-npx entityts db:migrate:create CustomDataMigration
+npx entityTS db:migrate:create CustomDataMigration
 ```
 
 ### 4. Database-First Scaffolding
@@ -709,7 +709,7 @@ npx entityts db:migrate:create CustomDataMigration
 Reverse-engineer an existing database into TypeScript entity classes and a `DbContext`:
 
 ```bash
-npx entityts db:scaffold --context src/database/AppDbContext.ts --output src/entities
+npx entityTS db:scaffold --context src/database/AppDbContext.ts --output src/entities
 ```
 
 ---

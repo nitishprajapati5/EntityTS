@@ -2,7 +2,7 @@ import { PrismaImporter, TypeormImporter, DrizzleImporter } from '../src/importe
 
 describe('Universal ORM Migration Importers', () => {
   describe('PrismaImporter', () => {
-    it('translates schema.prisma into entityts entities and AppDbContext', () => {
+    it('translates schema.prisma into entityTS entities and AppDbContext', () => {
       const prismaSchema = `
 datasource db {
   provider = "postgresql"
@@ -65,7 +65,7 @@ model Post {
   });
 
   describe('TypeormImporter', () => {
-    it('translates TypeORM entity code to entityts', () => {
+    it('translates TypeORM entity code to entityTS', () => {
       const typeormCode = `
 import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, UpdateDateColumn, VersionColumn, OneToMany } from 'typeorm';
 
@@ -129,7 +129,7 @@ export class Product {
   });
 
   describe('DrizzleImporter', () => {
-    it('translates Drizzle schema to entityts entities and AppDbContext', () => {
+    it('translates Drizzle schema to entityTS entities and AppDbContext', () => {
       const drizzleCode = `
 import { pgTable, serial, text, varchar, integer, timestamp, boolean } from 'drizzle-orm/pg-core';
 

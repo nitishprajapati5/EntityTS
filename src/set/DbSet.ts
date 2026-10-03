@@ -1016,6 +1016,13 @@ export class DbSet<T extends object = any> {
     return this.orderBy(field as any, direction);
   }
 
+  public thenByDescending<V>(field: (entity: T) => V): DbSet<T>;
+  public thenByDescending<K extends keyof T & string>(field: K): DbSet<T>;
+  public thenByDescending(field: string & {}): DbSet<T>;
+  public thenByDescending(field: ColumnKey<T> | ((entity: T) => unknown)): DbSet<T> {
+    return this.orderBy(field as any, 'desc');
+  }
+
   // --- Pagination ---
 
   /**
@@ -1434,9 +1441,11 @@ export class DbSet<T extends object = any> {
    * ```
    */
   public async toCursorPage(options: CursorPaginationOptions<T>): Promise<CursorPageResult<T>> {
-    const limit = options.limit;
-    const direction = (options.direction || 'asc').toLowerCase() as 'asc' | 'desc';
-    const orderCol = this.mapPropertyToColumn(extractColumnName(options.orderBy));
+    const limit = options.limit || (options as any).take || 20;
+    const direction = (options.direction || (options as any).order || 'asc').toLowerCase() as
+      'asc' | 'desc';
+    const orderProp = options.orderBy || (options as any).cursorColumn || 'id';
+    const orderCol = this.mapPropertyToColumn(extractColumnName(orderProp)) || 'id';
     const tieCol = options.tieBreaker
       ? this.mapPropertyToColumn(extractColumnName(options.tieBreaker))
       : undefined;
@@ -2162,6 +2171,20 @@ export class DbSet<T extends object = any> {
       } else {
         break;
       }
+    }
+
+    // Check if the unwrapped part contains top-level ||
+    const orParts = this.splitTopLevelLogical(part, '||');
+    if (orParts.length > 1) {
+      let allSucceeded = true;
+      where.group(g => {
+        for (let i = 0; i < orParts.length; i++) {
+          if (i > 0) g.or();
+          const partSuccess = this.parseAndApplyAndGroup(g, orParts[i], param);
+          if (!partSuccess) allSucceeded = false;
+        }
+      });
+      return allSucceeded;
     }
 
     // A. String methods: u.name.includes('ali') or u.name.contains('ali')
@@ -3555,10 +3578,32 @@ export class DbSet<T extends object = any> {
    * );
    * ```
    */
-  public async fromSql(sql: string, params?: unknown[]): Promise<T[]> {
-    const adapterParams = params
-      ? params.map((val, idx) => ({ name: `p${idx}`, value: val }))
-      : undefined;
+  public async fromSql(
+    sqlOrStrings: string | TemplateStringsArray,
+    ...paramsOrValues: any[]
+  ): Promise<T[]> {
+    let sql: string;
+    let values: unknown[] = [];
+
+    if (Array.isArray(sqlOrStrings) && 'raw' in sqlOrStrings) {
+      sql = '';
+      const strings = sqlOrStrings as TemplateStringsArray;
+      for (let i = 0; i < strings.length; i++) {
+        sql += strings[i];
+        if (i < paramsOrValues.length) {
+          sql += `@p${i}`;
+          values.push(paramsOrValues[i]);
+        }
+      }
+    } else {
+      sql = sqlOrStrings as string;
+      values = Array.isArray(paramsOrValues[0])
+        ? paramsOrValues[0]
+        : paramsOrValues.filter(p => p !== undefined);
+    }
+
+    const adapterParams =
+      values.length > 0 ? values.map((val, idx) => ({ name: `p${idx}`, value: val })) : undefined;
     const rows = await this.adapter.executeQuery<Record<string, unknown>>(
       sql,
       adapterParams,

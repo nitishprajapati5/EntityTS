@@ -81,7 +81,7 @@ app.get('/', async (req: Request, res: Response) => {
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>entityts — Express CRUD Operations Showcase</title>
+  <title>entityTS — Express CRUD Operations Showcase</title>
   <style>
     :root {
       --bg: #0d1117;
@@ -196,7 +196,7 @@ app.get('/', async (req: Request, res: Response) => {
 <body>
   <div class="container">
     <header>
-      <h1>⚡ entityts — Express API Showcase</h1>
+      <h1>⚡ entityTS — Express API Showcase</h1>
       <p style="margin: 4px 0 12px 0; color: #8b949e;">EF Core-inspired DbContext & DbSet ORM with Stored Procedures, Transactions, and Full CRUD in Node.js</p>
       <div>
         <span class="badge status-ok">● Database: ${db.provider.toUpperCase()} (${isHealthy ? 'Connected' : 'Disconnected'})</span>

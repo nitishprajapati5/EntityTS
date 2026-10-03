@@ -10,7 +10,7 @@ function printHelp(): void {
 EntityTS CLI tool
 
 Usage:
-  entityts <command> [options]
+  entityTS <command> [options]
 
 CODE FIRST commands:
   db:push                      Apply schema changes to the DB (no migration file)
@@ -39,14 +39,14 @@ BENCHMARK commands:
   benchmark --json             Output benchmark results in JSON format
 
 DRIVER ISOLATION commands:
-  add <provider>               Install ONLY the package for your database (e.g. entityts add mssql)
+  add <provider>               Install ONLY the package for your database (e.g. entityTS add mssql)
                                Prevents installing unneeded drivers (e.g. will not install pg for mssql)
   init --db <provider>         Scaffold DbContext and install only the driver for that database
 
 ORM MIGRATION IMPORTERS:
   import --from <prisma|typeorm|drizzle> --input <path>
                                Automatically migrate from Prisma, TypeORM, or Drizzle
-                               into entityts entities and DbContext
+                               into entityTS entities and DbContext
   import --output <dir>        Output directory (default: ./src/database)
 
 Other:
@@ -260,7 +260,7 @@ async function cmdDbScaffold(flags: Record<string, string | boolean>): Promise<v
 function cmdMigrateCreate(name: string): void {
   if (!name) {
     console.error(
-      'Error: Migration name required. Example: entityts db:migrate:create AddUsersTable',
+      'Error: Migration name required. Example: entityTS db:migrate:create AddUsersTable',
     );
     process.exit(1);
   }
@@ -651,7 +651,7 @@ async function main(): Promise<void> {
     const name = positionals[0] || (flags['name'] as string);
     if (!name) {
       console.error(
-        'Error: Migration name required. Example: entityts db:migrate:generate InitSchema',
+        'Error: Migration name required. Example: entityTS db:migrate:generate InitSchema',
       );
       process.exit(1);
     }
@@ -799,7 +799,7 @@ async function cmdAdd(
   flags: Record<string, string | boolean>,
 ): Promise<void> {
   if (!providerArg || providerArg.startsWith('--')) {
-    console.error('Error: Database provider required. Example: entityts add mssql');
+    console.error('Error: Database provider required. Example: entityTS add mssql');
     console.log('Supported providers: mssql, postgres, mysql, sqlite, turso, neon, planetscale');
     process.exit(1);
   }
@@ -830,7 +830,7 @@ async function cmdAdd(
       console.warn(
         `   To keep your dependencies minimal, only install the driver for your database:`,
       );
-      console.warn(`     entityts add ${configuredProvider}`);
+      console.warn(`     entityTS add ${configuredProvider}`);
       console.warn(`   (If you really want to install both, pass --force to proceed anyway).\n`);
       process.exit(1);
     }
@@ -869,12 +869,12 @@ async function cmdAdd(
 async function cmdInit(flags: Record<string, string | boolean>): Promise<void> {
   const dbArg = (flags['db'] || flags['provider'] || flags['database']) as string | undefined;
   if (!dbArg) {
-    console.error('Error: --db <provider> is required for entityts init.');
+    console.error('Error: --db <provider> is required for entityTS init.');
     console.log('Examples:');
-    console.log('  entityts init --db mssql');
-    console.log('  entityts init --db postgres');
-    console.log('  entityts init --db mysql');
-    console.log('  entityts init --db sqlite');
+    console.log('  entityTS init --db mssql');
+    console.log('  entityTS init --db postgres');
+    console.log('  entityTS init --db mysql');
+    console.log('  entityTS init --db sqlite');
     process.exit(1);
   }
 
@@ -996,7 +996,7 @@ async function cmdImport(flags: Record<string, string | boolean>): Promise<void>
   console.log(`📝 Generated DbContext: ${contextPath}`);
 
   console.log(
-    `\n✅ Successfully imported ${result.entities.length} entities from ${normalizedFrom} into entityts!`,
+    `\n✅ Successfully imported ${result.entities.length} entities from ${normalizedFrom} into entityTS!`,
   );
 }
 

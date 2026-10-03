@@ -2,7 +2,7 @@
   "name": "example-express-crud",
   "version": "1.0.0",
   "private": true,
-  "description": "Express application showcase demonstrating complete CRUD operations using entityts",
+  "description": "Express application showcase demonstrating complete CRUD operations using entityTS",
   "main": "dist/server.js",
   "scripts": {
     "build": "tsc",

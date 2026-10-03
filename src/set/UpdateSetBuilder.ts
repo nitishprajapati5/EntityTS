@@ -35,6 +35,20 @@ export class UpdateSetBuilder<T = any> {
   }
 
   /**
+   * Increments a numeric column by a specified amount (defaults to 1).
+   */
+  public increment<K extends ColumnKey<T>>(
+    property: K | ((entity: T) => unknown),
+    amount: number = 1,
+  ): this {
+    const col = extractColumnName(property);
+    if (col) {
+      this._data[col] = amount;
+    }
+    return this;
+  }
+
+  /**
    * Returns the internal key-value mapping of updated properties.
    */
   public getData(): Record<string, unknown> {

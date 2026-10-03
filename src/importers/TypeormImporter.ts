@@ -2,7 +2,7 @@ import { GeneratedFile, ImportResult } from './PrismaImporter';
 
 export class TypeormImporter {
   /**
-   * Translates TypeORM entity source code into entityts entity code.
+   * Translates TypeORM entity source code into entityTS entity code.
    */
   public static translateEntity(typeormCode: string): string {
     let result = typeormCode;

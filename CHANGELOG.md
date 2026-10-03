@@ -59,7 +59,7 @@
 - **cache:** define IQueryCache interface contract ([aa15220](https://github.com/nitish-prajapati-zignuts/EntityTS/commit/aa1522087df3ec2a7eed92f32f2998e4543b7f59))
 - **cache:** implement in-memory LRU query cache provider ([0a69ac2](https://github.com/nitish-prajapati-zignuts/EntityTS/commit/0a69ac2dff1245a3e83b6597d5ed6364faff061f))
 - **cache:** implement Redis distributed query cache provider and exports ([ef7a208](https://github.com/nitish-prajapati-zignuts/EntityTS/commit/ef7a20806765cf5d90f32a8875fa47cc25d19637))
-- **cli:** implement nsp / entityts command-line CLI tool ([641007d](https://github.com/nitish-prajapati-zignuts/EntityTS/commit/641007dc2867a73cee26e7f74e0027dbed1f8bb3))
+- **cli:** implement nsp / entityTS command-line CLI tool ([641007d](https://github.com/nitish-prajapati-zignuts/EntityTS/commit/641007dc2867a73cee26e7f74e0027dbed1f8bb3))
 - **codegen:** implement code-first entity to migration diff generator ([cce7858](https://github.com/nitish-prajapati-zignuts/EntityTS/commit/cce7858befdba0ecd572dafe28d51c20d02d36e1))
 - **codegen:** implement DDL schema generator and codegen exports ([4da2d54](https://github.com/nitish-prajapati-zignuts/EntityTS/commit/4da2d5481e7eb8e7343655ec081ea626f9f2b5d1))
 - **concurrency:** integrate @Version with saveChanges and updateUnique ([02b83b0](https://github.com/nitish-prajapati-zignuts/EntityTS/commit/02b83b021900455a2bb000c9a9d72cecdaf0b3d5))

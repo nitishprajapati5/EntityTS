@@ -4,7 +4,7 @@ import { AppDbContext } from './database/AppDbContext';
 
 async function bootstrap() {
   console.log('──────────────────────────────────────────────────────────────────');
-  console.log('  Starting entityts Express Showcase Server');
+  console.log('  Starting entityTS Express Showcase Server');
   console.log('──────────────────────────────────────────────────────────────────');
 
   // 1. Initialize Database Schema & Seed Data

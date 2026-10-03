@@ -197,12 +197,12 @@ export async function loadDriver<T = any>(
     const pkg = info ? info.packageName : specifier;
     const displayName = info ? info.displayName : provider;
     const cmd = getInstallCommand(pkg, pm);
-    const entitytsCmd = `entityts add ${provider}`;
+    const entitytsCmd = `entityTS add ${provider}`;
     const notes = info?.exclusiveNotes ? `\n\n  ⚠️  ${info.exclusiveNotes}` : '';
 
     throw new ConnectionException(
       `Database driver '${pkg}' is not installed.\n` +
-        `To use ${displayName} with entityts, install only the required driver:\n\n` +
+        `To use ${displayName} with entityTS, install only the required driver:\n\n` +
         `  ${cmd}\n` +
         `  (or run: ${entitytsCmd})` +
         notes,

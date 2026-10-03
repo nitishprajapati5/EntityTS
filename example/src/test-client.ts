@@ -32,7 +32,7 @@ function assert(condition: boolean, msg: string) {
 
 async function main() {
   console.log('\n══════════════════════════════════════════════════════════════════');
-  console.log('  entityts — Comprehensive CRUD End-to-End Test Suite');
+  console.log('  entityTS — Comprehensive CRUD End-to-End Test Suite');
   console.log('══════════════════════════════════════════════════════════════════\n');
 
   // Initialize DB

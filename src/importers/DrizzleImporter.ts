@@ -20,7 +20,7 @@ interface DrizzleTable {
 
 export class DrizzleImporter {
   /**
-   * Translates Drizzle schema file content into entityts entities and AppDbContext.
+   * Translates Drizzle schema file content into entityTS entities and AppDbContext.
    */
   public static importSchema(drizzleCode: string, contextName = 'AppDbContext'): ImportResult {
     const tables: DrizzleTable[] = [];
