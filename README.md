@@ -59,13 +59,13 @@
 Install the core package:
 
 ```bash
-npm install entityts reflect-metadata
+npm install entityts-orm reflect-metadata
 # or
-pnpm add entityts reflect-metadata
+pnpm add entityts-orm reflect-metadata
 # or
-yarn add entityts reflect-metadata
+yarn add entityts-orm reflect-metadata
 # or
-bun add entityts reflect-metadata
+bun add entityts-orm reflect-metadata
 ```
 
 ### Install ONLY the Database Driver You Need
@@ -116,7 +116,7 @@ Ensure your `tsconfig.json` contains:
 ### 1. Define Entity
 
 ```typescript
-import { Entity, Table, Column, PrimaryKey, CreatedAt, UpdatedAt, SqlType } from 'entityts';
+import { Entity, Table, Column, PrimaryKey, CreatedAt, UpdatedAt, SqlType } from 'entityts-orm';
 
 @Entity()
 @Table('users')
@@ -145,7 +145,7 @@ export class User {
 ### 2. Define DbContext
 
 ```typescript
-import { DbContext, DbContextOptionsBuilder } from 'entityts';
+import { DbContext, DbContextOptionsBuilder } from 'entityts-orm';
 import { User } from './User';
 
 export class AppDbContext extends DbContext {
@@ -596,7 +596,7 @@ app.get('/users', async (req, res) => {
 });
 
 // Pattern 2: Scoped Per-Request Middleware
-import { dbContextMiddleware } from 'entityts';
+import { dbContextMiddleware } from 'entityts-orm';
 import { AppDbContext } from './AppDbContext';
 
 app.use(dbContextMiddleware(AppDbContext));
@@ -611,7 +611,7 @@ app.get('/users', async (req, res) => {
 ```typescript
 // app.module.ts
 import { Module } from '@nestjs/common';
-import { DbContextModule } from 'entityts';
+import { DbContextModule } from 'entityts-orm';
 import { AppDbContext } from './AppDbContext';
 
 @Module({
@@ -625,7 +625,7 @@ export class AppModule {}
 
 // users.service.ts
 import { Injectable } from '@nestjs/common';
-import { InjectDbContext } from 'entityts';
+import { InjectDbContext } from 'entityts-orm';
 import { AppDbContext } from './AppDbContext';
 
 @Injectable()
@@ -719,7 +719,7 @@ npx entityTS db:scaffold --context src/database/AppDbContext.ts --output src/ent
 Write fast, deterministic unit tests without running a database server or container:
 
 ```typescript
-import { MockDbAdapter } from 'entityts';
+import { MockDbAdapter } from 'entityts-orm';
 import { AppDbContext } from './AppDbContext';
 
 describe('UserService', () => {

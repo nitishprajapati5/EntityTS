@@ -106,7 +106,7 @@ export default function Home(): JSX.Element {
             <h2>Quick Installation</h2>
             <div style={{ maxWidth: '600px', margin: '1.5rem auto 0' }}>
               <pre style={{ textAlign: 'left', padding: '1rem 1.5rem', borderRadius: '8px' }}>
-                <code>npm install entityts reflect-metadata</code>
+                <code>npm install entityts-orm reflect-metadata</code>
               </pre>
             </div>
           </div>

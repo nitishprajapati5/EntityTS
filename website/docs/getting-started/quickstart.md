@@ -15,7 +15,7 @@ Get up and running with **EntityTS** in your TypeScript project in just a few si
 Install `entityTS` and its required peer dependency `reflect-metadata`:
 
 ```bash
-npm install entityts reflect-metadata
+npm install entityts-orm reflect-metadata
 ```
 
 Make sure your `tsconfig.json` enables experimental decorators:
