@@ -1,3 +1,9 @@
+## [1.4.4](https://github.com/nitishprajapati5/EntityTS/compare/v1.4.3...v1.4.4) (2026-10-03)
+
+### Bug Fixes
+
+- **pkg:** apply npm pkg fix to normalize repository url and bin path ([6d33c98](https://github.com/nitishprajapati5/EntityTS/commit/6d33c985357b0304eacbec333bd556f81097b057))
+
 ## [1.4.3](https://github.com/nitishprajapati5/EntityTS/compare/v1.4.2...v1.4.3) (2026-10-03)
 
 ## [1.4.2](https://github.com/nitishprajapati5/EntityTS/compare/v1.4.1...v1.4.2) (2026-10-03)
