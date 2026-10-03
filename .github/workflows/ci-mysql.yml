@@ -23,7 +23,7 @@ jobs:
         uses: actions/checkout@v4
       - name: Evaluate CI Gate
         id: check
-        run: node scripts/ci-gate.js mysql
+        run: node scripts/ci-gate.js mysql ${{ github.event_name }}
 
   mysql-test:
     name: MySQL 8.0 on Node ${{ matrix.node-version }}

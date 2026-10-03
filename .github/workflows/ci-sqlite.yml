@@ -22,7 +22,7 @@ jobs:
         uses: actions/checkout@v4
       - name: Evaluate CI Gate
         id: check
-        run: node scripts/ci-gate.js sqlite
+        run: node scripts/ci-gate.js sqlite ${{ github.event_name }}
 
   sqlite-test:
     name: SQLite Embedded on Node ${{ matrix.node-version }}

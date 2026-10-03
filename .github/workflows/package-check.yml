@@ -21,7 +21,7 @@ jobs:
         uses: actions/checkout@v4
       - name: Evaluate CI Gate
         id: check
-        run: node scripts/ci-gate.js packageCheck
+        run: node scripts/ci-gate.js packageCheck ${{ github.event_name }}
 
   check-packaging:
     name: Validate NPM Package Distribution

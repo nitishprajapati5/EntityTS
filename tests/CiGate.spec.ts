@@ -1,4 +1,10 @@
-import { checkPipeline, loadConfig, setGlobalFlag, setPipelineFlag } from '../scripts/ci-gate';
+import {
+  checkPipeline,
+  loadConfig,
+  setGlobalFlag,
+  setPipelineFlag,
+  setTriggerFlag,
+} from '../scripts/ci-gate';
 import * as fs from 'fs';
 import * as path from 'path';
 
@@ -18,13 +24,26 @@ describe('CI/CD Pipeline Gatekeeper (ci-gate)', () => {
   it('loads valid configuration successfully', () => {
     const config = loadConfig();
     expect(config).toBeDefined();
-    expect(config.enabled).toBe(true);
+    expect(typeof config.enabled).toBe('boolean');
+    expect(config.triggers).toBeDefined();
+    expect(typeof config.triggers?.push).toBe('boolean');
     expect(config.pipelines).toBeDefined();
   });
 
   it('reports pipeline enabled when configured as true', () => {
     const result = checkPipeline('ci');
     expect(result.enabled).toBe(true);
+  });
+
+  it('skips pipeline when push trigger is disabled and event is push', () => {
+    setTriggerFlag('push', false);
+    const pushResult = checkPipeline('ci', 'push');
+    expect(pushResult.enabled).toBe(false);
+    expect(pushResult.reason).toContain("Trigger event 'push' is disabled");
+
+    // Pull request event still runs
+    const prResult = checkPipeline('ci', 'pull_request');
+    expect(prResult.enabled).toBe(true);
   });
 
   it('partially disables a specific pipeline when set to false in code config', () => {
@@ -75,6 +94,16 @@ describe('CI/CD Pipeline Gatekeeper (ci-gate)', () => {
     setGlobalFlag(true);
     expect(loadConfig().enabled).toBe(true);
     expect(checkPipeline('ci').enabled).toBe(true);
+  });
+
+  it('updates trigger flag via setTriggerFlag() helper', () => {
+    setTriggerFlag('push', false);
+    expect(loadConfig().triggers?.push).toBe(false);
+    expect(checkPipeline('ci', 'push').enabled).toBe(false);
+
+    setTriggerFlag('push', true);
+    expect(loadConfig().triggers?.push).toBe(true);
+    expect(checkPipeline('ci', 'push').enabled).toBe(true);
   });
 
   it('updates individual pipeline flag via setPipelineFlag() helper', () => {

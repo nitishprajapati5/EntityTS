@@ -62,6 +62,8 @@
     "ci:status": "node scripts/ci-gate.js --status",
     "ci:on": "node scripts/ci-gate.js --on",
     "ci:off": "node scripts/ci-gate.js --off",
+    "ci:push:on": "node scripts/ci-gate.js --push on",
+    "ci:push:off": "node scripts/ci-gate.js --push off",
     "ci:enable": "node scripts/ci-gate.js --enable",
     "ci:disable": "node scripts/ci-gate.js --disable",
     "test:coverage": "jest --coverage --runInBand",

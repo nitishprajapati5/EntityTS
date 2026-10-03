@@ -10,6 +10,28 @@
     "description": {
       "type": "string"
     },
+    "triggers": {
+      "type": "object",
+      "description": "Event-level triggers to control whether workflows run on push, pull_request, etc.",
+      "properties": {
+        "push": {
+          "type": "boolean",
+          "description": "Enable or disable workflows when pushing code to Git/GitHub."
+        },
+        "pull_request": {
+          "type": "boolean",
+          "description": "Enable or disable workflows on Pull Requests."
+        },
+        "workflow_dispatch": {
+          "type": "boolean",
+          "description": "Enable or disable manual workflow_dispatch triggers."
+        },
+        "schedule": {
+          "type": "boolean",
+          "description": "Enable or disable scheduled cron workflow triggers."
+        }
+      }
+    },
     "pipelines": {
       "type": "object",
       "description": "Selective per-pipeline toggles.",

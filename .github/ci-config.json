@@ -1,7 +1,13 @@
 {
   "$schema": "./ci-config.schema.json",
   "enabled": true,
-  "description": "EntityTS CI/CD pipeline code configuration toggle. Set 'enabled: false' to disable all pipelines, or selectively toggle individual pipelines below.",
+  "description": "EntityTS CI/CD pipeline code configuration toggle. Configure triggers (e.g. push, pull_request) and individual pipeline flags below.",
+  "triggers": {
+    "push": false,
+    "pull_request": true,
+    "workflow_dispatch": true,
+    "schedule": true
+  },
   "pipelines": {
     "ci": true,
     "postgres": true,

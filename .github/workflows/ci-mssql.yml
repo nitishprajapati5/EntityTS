@@ -23,7 +23,7 @@ jobs:
         uses: actions/checkout@v4
       - name: Evaluate CI Gate
         id: check
-        run: node scripts/ci-gate.js mssql
+        run: node scripts/ci-gate.js mssql ${{ github.event_name }}
 
   mssql-postgres-test:
     name: Microsoft SQL Server 2022 & PostgreSQL 16 on Node ${{ matrix.node-version }}

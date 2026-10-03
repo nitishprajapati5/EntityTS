@@ -23,7 +23,7 @@ jobs:
         uses: actions/checkout@v4
       - name: Evaluate CI Gate
         id: check
-        run: node scripts/ci-gate.js postgres
+        run: node scripts/ci-gate.js postgres ${{ github.event_name }}
 
   postgres-test:
     name: PostgreSQL 16 on Node ${{ matrix.node-version }}

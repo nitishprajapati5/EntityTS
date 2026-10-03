@@ -3,7 +3,7 @@
 /**
  * CI/CD Pipeline Gatekeeper
  * Evaluates .github/ci-config.json to conditionally
- * enable or disable CI/CD pipelines through code flags.
+ * enable or disable CI/CD pipelines and event triggers (e.g. push, PR) through code flags.
  */
 
 const fs = require('fs');
@@ -19,7 +19,7 @@ function loadConfig() {
   } catch (err) {
     console.warn(`[ci-gate] Warning: Failed to parse ${CONFIG_PATH}:`, err.message);
   }
-  return { enabled: true, pipelines: {} };
+  return { enabled: true, triggers: {}, pipelines: {} };
 }
 
 function saveConfig(config) {
@@ -39,6 +39,16 @@ function setGlobalFlag(enabled) {
   return config;
 }
 
+function setTriggerFlag(triggerName, enabled) {
+  const config = loadConfig();
+  if (!config.triggers) {
+    config.triggers = {};
+  }
+  config.triggers[triggerName] = Boolean(enabled);
+  saveConfig(config);
+  return config;
+}
+
 function setPipelineFlag(pipelineName, enabled) {
   const config = loadConfig();
   if (!config.pipelines) {
@@ -49,8 +59,9 @@ function setPipelineFlag(pipelineName, enabled) {
   return config;
 }
 
-function checkPipeline(pipelineName) {
+function checkPipeline(pipelineName, eventName) {
   const config = loadConfig();
+  const activeEvent = eventName || process.env.GITHUB_EVENT_NAME;
 
   // 1. Global killswitch in code config
   if (config.enabled === false) {
@@ -60,7 +71,15 @@ function checkPipeline(pipelineName) {
     };
   }
 
-  // 2. Specific pipeline toggle in code config
+  // 2. Trigger event toggle (e.g. push: false or pull_request: false)
+  if (activeEvent && config.triggers && config.triggers[activeEvent] === false) {
+    return {
+      enabled: false,
+      reason: `Trigger event '${activeEvent}' is disabled in .github/ci-config.json (triggers.${activeEvent}: false)`,
+    };
+  }
+
+  // 3. Specific pipeline toggle in code config
   if (config.pipelines && config.pipelines[pipelineName] === false) {
     return {
       enabled: false,
@@ -68,12 +87,12 @@ function checkPipeline(pipelineName) {
     };
   }
 
-  // 3. Database group toggle
+  // 4. Database group toggle
   if (['postgres', 'mysql', 'mssql', 'sqlite'].includes(pipelineName)) {
     if (config.pipelines && config.pipelines.databases === false) {
       return {
         enabled: false,
-        reason: 'Database test pipelines are disabled in .github/ci-config.json',
+        reason: 'Database test pipelines are disabled in .github/ci-config.json (databases: false)',
       };
     }
   }
@@ -87,6 +106,15 @@ function printStatus() {
   console.log('       EntityTS CI/CD Pipeline Flags     ');
   console.log('========================================');
   console.log(`Global CI/CD Switch: ${config.enabled !== false ? '✅ ENABLED' : '⛔ DISABLED'}`);
+  console.log('----------------------------------------');
+  console.log('Event Triggers:');
+  const triggers = config.triggers || {};
+  const standardTriggers = ['push', 'pull_request', 'workflow_dispatch', 'schedule'];
+  for (const trigger of standardTriggers) {
+    const isEnabled = triggers[trigger] !== false;
+    const mark = isEnabled ? '✅ ENABLED' : '⛔ DISABLED';
+    console.log(`  • ${trigger.padEnd(18)}: ${mark}`);
+  }
   console.log('----------------------------------------');
   console.log('Pipeline Flags:');
   const pipelines = config.pipelines || {};
@@ -104,11 +132,10 @@ function printStatus() {
   ];
   const allKeys = Array.from(new Set([...standardList, ...Object.keys(pipelines)]));
   for (const key of allKeys) {
-    const isExplicitlyDisabled = pipelines[key] === false;
     const effectiveStatus = checkPipeline(key);
     const mark = effectiveStatus.enabled ? '✅ ENABLED' : '⛔ DISABLED';
     console.log(
-      `  • ${key.padEnd(16)}: ${mark} ${!effectiveStatus.enabled ? `(${effectiveStatus.reason})` : ''}`,
+      `  • ${key.padEnd(18)}: ${mark} ${!effectiveStatus.enabled ? `(${effectiveStatus.reason})` : ''}`,
     );
   }
   console.log('========================================\n');
@@ -132,6 +159,26 @@ function main() {
   if (command === '--off' || command === 'off') {
     setGlobalFlag(false);
     console.log('[ci-gate] ⛔ Global CI/CD disabled in .github/ci-config.json (enabled: false)');
+    return;
+  }
+
+  if (command === '--push') {
+    const val = args[1];
+    const enable = val !== 'off' && val !== 'false' && val !== 'disable';
+    setTriggerFlag('push', enable);
+    console.log(
+      `[ci-gate] ${enable ? '✅' : '⛔'} 'push' trigger set to ${enable} in .github/ci-config.json`,
+    );
+    return;
+  }
+
+  if (command === '--pr') {
+    const val = args[1];
+    const enable = val !== 'off' && val !== 'false' && val !== 'disable';
+    setTriggerFlag('pull_request', enable);
+    console.log(
+      `[ci-gate] ${enable ? '✅' : '⛔'} 'pull_request' trigger set to ${enable} in .github/ci-config.json`,
+    );
     return;
   }
 
@@ -161,7 +208,8 @@ function main() {
     return;
   }
 
-  const result = checkPipeline(command);
+  const eventName = args[1];
+  const result = checkPipeline(command, eventName);
 
   if (process.env.GITHUB_OUTPUT) {
     try {
@@ -185,4 +233,11 @@ if (require.main === module) {
   main();
 }
 
-module.exports = { loadConfig, saveConfig, setGlobalFlag, setPipelineFlag, checkPipeline };
+module.exports = {
+  loadConfig,
+  saveConfig,
+  setGlobalFlag,
+  setTriggerFlag,
+  setPipelineFlag,
+  checkPipeline,
+};
