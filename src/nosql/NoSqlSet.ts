@@ -266,6 +266,21 @@ export class NoSqlSet<T extends object = any> {
   }
 
   /**
+   * Finds a document by its primary key / ID (_id or id).
+   */
+  public async find(id: unknown): Promise<T | null> {
+    const filter = { $or: [{ _id: id }, { id: id }] };
+    return this.adapter.findOne<T>(this.collectionName, filter as any);
+  }
+
+  /**
+   * Alias for find(id).
+   */
+  public async findById(id: unknown): Promise<T | null> {
+    return this.find(id);
+  }
+
+  /**
    * Returns the first document or null (alias for first()).
    */
   public async firstOrDefault(predicate?: (entity: T) => boolean): Promise<T | null>;
@@ -506,11 +521,25 @@ export class NoSqlSet<T extends object = any> {
   }
 
   /**
+   * Alias for add(doc).
+   */
+  public async insert(doc: T): Promise<T> {
+    return this.add(doc);
+  }
+
+  /**
    * Adds multiple documents to the collection.
    */
   public async addMany(docs: T[]): Promise<T[]> {
     await this.adapter.insertMany<T>(this.collectionName, docs);
     return docs;
+  }
+
+  /**
+   * Alias for addMany(docs).
+   */
+  public async insertMany(docs: T[]): Promise<T[]> {
+    return this.addMany(docs);
   }
 
   /**
@@ -544,13 +573,79 @@ export class NoSqlSet<T extends object = any> {
     return doc;
   }
 
+  /**
+   * Adds a $lookup aggregation stage to join with another collection.
+   */
+  public lookup(options: {
+    from: string;
+    localField: string;
+    foreignField: string;
+    as: string;
+  }): NoSqlSet<T> {
+    const q = this.query.clone();
+    q.lookup(options);
+    return this.clone(q);
+  }
+
+  /**
+   * Adds an $unwind aggregation stage to deconstruct an array field.
+   */
+  public unwind(
+    path: string | { path: string; preserveNullAndEmptyArrays?: boolean },
+  ): NoSqlSet<T> {
+    const q = this.query.clone();
+    q.unwind(path);
+    return this.clone(q);
+  }
+
+  /**
+   * Adds a $group aggregation stage to group documents by id with accumulators.
+   */
+  public group(id: any, accumulators?: Record<string, any>): NoSqlSet<T> {
+    const q = this.query.clone();
+    q.group(id, accumulators);
+    return this.clone(q);
+  }
+
+  /**
+   * Adds a $facet aggregation stage to process multiple pipelines.
+   */
+  public facet(facets: Record<string, AggregationStage[]>): NoSqlSet<T> {
+    const q = this.query.clone();
+    q.facet(facets);
+    return this.clone(q);
+  }
+
+  /**
+   * Adds an $addFields aggregation stage.
+   */
+  public addFields(fields: Record<string, any>): NoSqlSet<T> {
+    const q = this.query.clone();
+    q.addFields(fields);
+    return this.clone(q);
+  }
+
+  /**
+   * Creates an index on this collection.
+   */
+  public async createIndex(
+    keys: Record<string, 1 | -1 | 'text' | '2dsphere' | string>,
+    options?: { unique?: boolean; name?: string; background?: boolean; ttl?: number },
+  ): Promise<string> {
+    if (typeof this.adapter.createIndex === 'function') {
+      return this.adapter.createIndex(this.collectionName, keys, options);
+    }
+    return `idx_${Object.keys(keys).join('_')}`;
+  }
+
   // --- Raw MongoDB & Diagnostics Escape Hatches ---
 
   /**
-   * Runs an arbitrary MongoDB aggregation pipeline on this collection.
+   * Runs the compiled aggregation pipeline (or custom pipeline) on this collection.
    */
-  public async aggregate<R = any>(pipeline: AggregationStage[]): Promise<R[]> {
-    return this.adapter.aggregate<R>(this.collectionName, pipeline);
+  public async aggregate<R = any>(pipeline?: AggregationStage[]): Promise<R[]> {
+    const finalPipeline = pipeline ?? this.query.compileAggregationPipeline();
+    return this.adapter.aggregate<R>(this.collectionName, finalPipeline);
   }
 
   /**

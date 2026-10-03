@@ -109,6 +109,41 @@ export class UnitOfWork<TContext extends DbContext = DbContext> {
       state,
       patch,
     });
+
+    // Cascade operations for navigation properties
+    if (entity && typeof entity === 'object') {
+      const meta = ModelMetadataRegistry.getInstance().get(entity.constructor);
+      if (meta?.relations) {
+        for (const [propName, rel] of meta.relations) {
+          const val = (entity as any)[propName];
+          if (!val) continue;
+
+          const isInsert = state === EntityState.Added;
+          const isDelete = state === EntityState.Deleted;
+          const shouldCascade =
+            rel.cascade === true ||
+            (Array.isArray(rel.cascade) &&
+              ((isInsert && rel.cascade.includes('insert')) ||
+                (isDelete && rel.cascade.includes('delete'))));
+
+          if (shouldCascade) {
+            const targetCls = rel.target();
+            const childSet = this.context.set(targetCls as any);
+            const items = Array.isArray(val) ? val : [val];
+            for (const item of items) {
+              if (item && typeof item === 'object') {
+                // Avoid infinite recursion if already registered
+                const alreadyRegistered = this._operations.some(op => op.entity === item);
+                if (!alreadyRegistered) {
+                  this.register(childSet, item, state);
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+
     return this;
   }
 
@@ -154,7 +189,18 @@ export class UnitOfWork<TContext extends DbContext = DbContext> {
         const scopedSet = op.set.inTransaction(tx);
         // Propagate parent foreign keys if child references a parent in this unit of work
         this.propagateParentKeys(op.entity, sortedInserts);
-        const added = await scopedSet.add(op.entity);
+
+        // Strip navigation properties so scopedSet.add doesn't double-cascade
+        const entityToInsert = Object.create(Object.getPrototypeOf(op.entity));
+        Object.assign(entityToInsert, op.entity);
+        const meta = ModelMetadataRegistry.getInstance().get(op.entity.constructor);
+        if (meta?.relations) {
+          for (const [relName] of meta.relations) {
+            delete (entityToInsert as any)[relName];
+          }
+        }
+
+        const added = await scopedSet.add(entityToInsert);
         Object.assign(op.entity, added);
         insertedCount++;
       }
@@ -304,6 +350,31 @@ export class UnitOfWork<TContext extends DbContext = DbContext> {
             // If the foreign key on child is unset, assign from inserted parent
             if (childEntity[rel.foreignKey] === undefined || childEntity[rel.foreignKey] === null) {
               childEntity[rel.foreignKey] = parentId;
+            }
+          }
+        }
+      }
+    }
+
+    // Also check if any parent entity in allInserts has a hasMany/hasOne pointing to childEntity
+    for (const parentOp of allInserts) {
+      if (parentOp.entity === childEntity) continue;
+      const parentTarget = parentOp.entity.constructor;
+      const parentMeta = registry.get(parentTarget);
+      if (parentMeta?.relations) {
+        for (const [, rel] of parentMeta.relations) {
+          if (rel.type === 'hasMany' || rel.type === 'hasOne') {
+            if (rel.target() === childTarget) {
+              const parentPkProp = parentMeta.primaryKeys[0] || 'id';
+              const parentId = (parentOp.entity as any)[parentPkProp];
+              if (parentId !== undefined) {
+                if (
+                  childEntity[rel.foreignKey] === undefined ||
+                  childEntity[rel.foreignKey] === null
+                ) {
+                  childEntity[rel.foreignKey] = parentId;
+                }
+              }
             }
           }
         }

@@ -21,3 +21,6 @@ export * from './CompositeKey';
 export * from './DecimalDecorator';
 export * from './EncryptedDecorator';
 export * from './VectorDecorator';
+export * from './OneToMany';
+export * from './ManyToOne';
+export * from './OneToOne';

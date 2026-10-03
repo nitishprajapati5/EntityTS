@@ -1,4 +1,8 @@
-export type EventHandler<T = any> = (payload: T) => Promise<void> | void;
+export type EventHandler<T = any> = (
+  payload: T,
+  event?: string,
+  alias?: string,
+) => Promise<void> | void;
 
 interface EventRegistration {
   pattern: string;
@@ -103,7 +107,7 @@ export class EntityEventBus {
     for (const reg of this._listeners) {
       const matches = reg.regex.test(event) || (alias !== undefined && reg.regex.test(alias));
       if (matches) {
-        toExecute.push(() => reg.handler(payload));
+        toExecute.push(() => reg.handler(payload, event, alias));
         if (!reg.once) {
           remaining.push(reg);
         }
@@ -117,6 +121,13 @@ export class EntityEventBus {
     for (const exec of toExecute) {
       await exec();
     }
+  }
+
+  /**
+   * Publishes an event to listeners (alias for emit).
+   */
+  public async publish(event: string, payload: any, alias?: string): Promise<void> {
+    return this.emit(event, payload, alias);
   }
 
   /**

@@ -53,17 +53,23 @@ export class NoSqlContext {
   }
 
   /**
-   * Runs an operation inside an atomic multi-document transaction.
-   * Commits automatically on completion or rolls back if an error occurs.
+   * Starts a new multi-document transaction on the underlying database.
    */
-  public async withTransaction<R>(fn: (tx: NoSqlTransaction) => Promise<R>): Promise<R> {
+  public async beginTransaction(): Promise<NoSqlTransaction> {
     if (!this.adapter.beginTransaction) {
       throw new DbException(
         `Adapter '${this.adapter.provider}' does not support multi-document transactions.`,
       );
     }
+    return this.adapter.beginTransaction();
+  }
 
-    const tx = await this.adapter.beginTransaction();
+  /**
+   * Runs an operation inside an atomic multi-document transaction.
+   * Commits automatically on completion or rolls back if an error occurs.
+   */
+  public async withTransaction<R>(fn: (tx: NoSqlTransaction) => Promise<R>): Promise<R> {
+    const tx = await this.beginTransaction();
     try {
       const result = await fn(tx);
       await tx.commit();
@@ -71,6 +77,31 @@ export class NoSqlContext {
     } catch (err) {
       await tx.rollback();
       throw err;
+    }
+  }
+
+  /**
+   * Alias for withTransaction().
+   */
+  public async useTransaction<R>(fn: (tx: NoSqlTransaction) => Promise<R>): Promise<R> {
+    return this.withTransaction(fn);
+  }
+
+  /**
+   * Ensures that defined indexes exist across collections.
+   */
+  public async ensureIndexes(
+    indexMap: Record<
+      string,
+      Array<{ keys: Record<string, 1 | -1 | 'text' | '2dsphere' | string>; options?: any }>
+    > = {},
+  ): Promise<void> {
+    if (typeof this.adapter.createIndex !== 'function') return;
+
+    for (const [colName, indexes] of Object.entries(indexMap)) {
+      for (const idx of indexes) {
+        await this.adapter.createIndex(colName, idx.keys, idx.options);
+      }
     }
   }
 

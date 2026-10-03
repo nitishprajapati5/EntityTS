@@ -52,6 +52,8 @@ export interface RelationMetadata {
   otherKey?: string;
   through?: string;
   lazy?: boolean;
+  cascade?: boolean | ('insert' | 'update' | 'delete')[];
+  inverseSide?: (entity: any) => any;
 }
 
 export interface VersionMetadata {

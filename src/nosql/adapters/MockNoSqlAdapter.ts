@@ -258,6 +258,92 @@ export class MockNoSqlAdapter implements INoSqlAdapter {
         result = result.map(doc =>
           this.applyProjection(doc, stagePayload as Record<string, 0 | 1>),
         );
+      } else if (stageName === '$addFields') {
+        const fields = stagePayload as Record<string, any>;
+        result = result.map(doc => ({ ...doc, ...fields }));
+      } else if (stageName === '$lookup') {
+        const { from, localField, foreignField, as } = stagePayload as any;
+        const targetCollection = this.getOrCreateCollection(from);
+        result = result.map(doc => {
+          const lVal = doc[localField];
+          const matched = targetCollection.filter(t => t[foreignField] === lVal);
+          return { ...doc, [as]: JSON.parse(JSON.stringify(matched)) };
+        });
+      } else if (stageName === '$unwind') {
+        const rawPath =
+          typeof stagePayload === 'string' ? stagePayload : (stagePayload as any).path;
+        const fieldName = rawPath.startsWith('$') ? rawPath.slice(1) : rawPath;
+        const unwound: any[] = [];
+        for (const doc of result) {
+          const arr = doc[fieldName];
+          if (Array.isArray(arr) && arr.length > 0) {
+            for (const item of arr) {
+              unwound.push({ ...doc, [fieldName]: item });
+            }
+          } else if ((stagePayload as any)?.preserveNullAndEmptyArrays) {
+            unwound.push({ ...doc, [fieldName]: null });
+          }
+        }
+        result = unwound;
+      } else if (stageName === '$group') {
+        const groupSpec = stagePayload as Record<string, any>;
+        const idExpr = groupSpec._id;
+        const groups = new Map<string, any[]>();
+        for (const doc of result) {
+          let key: string;
+          if (typeof idExpr === 'string' && idExpr.startsWith('$')) {
+            key = String(doc[idExpr.slice(1)]);
+          } else if (idExpr === null) {
+            key = '__all__';
+          } else {
+            key = String(idExpr);
+          }
+          const list = groups.get(key) || [];
+          list.push(doc);
+          groups.set(key, list);
+        }
+
+        const groupedResult: any[] = [];
+        for (const [key, docs] of groups.entries()) {
+          const groupDoc: Record<string, any> = {
+            _id: key === '__all__' ? null : key,
+          };
+          for (const [field, acc] of Object.entries(groupSpec)) {
+            if (field === '_id') continue;
+            if (acc && typeof acc === 'object') {
+              if (acc.$sum !== undefined) {
+                if (typeof acc.$sum === 'number') {
+                  groupDoc[field] = docs.length * acc.$sum;
+                } else if (typeof acc.$sum === 'string' && acc.$sum.startsWith('$')) {
+                  const prop = acc.$sum.slice(1);
+                  groupDoc[field] = docs.reduce((sum, d) => sum + (Number(d[prop]) || 0), 0);
+                }
+              } else if (acc.$avg !== undefined && typeof acc.$avg === 'string') {
+                const prop = acc.$avg.slice(1);
+                const sum = docs.reduce((acc, d) => acc + (Number(d[prop]) || 0), 0);
+                groupDoc[field] = docs.length > 0 ? sum / docs.length : 0;
+              } else if (acc.$min !== undefined && typeof acc.$min === 'string') {
+                const prop = acc.$min.slice(1);
+                groupDoc[field] = Math.min(...docs.map(d => Number(d[prop]) || 0));
+              } else if (acc.$max !== undefined && typeof acc.$max === 'string') {
+                const prop = acc.$max.slice(1);
+                groupDoc[field] = Math.max(...docs.map(d => Number(d[prop]) || 0));
+              } else if (acc.$push !== undefined && typeof acc.$push === 'string') {
+                const prop = acc.$push.slice(1);
+                groupDoc[field] = docs.map(d => d[prop]);
+              }
+            }
+          }
+          groupedResult.push(groupDoc);
+        }
+        result = groupedResult;
+      } else if (stageName === '$facet') {
+        const facetSpec = stagePayload as Record<string, AggregationStage[]>;
+        const facetResult: Record<string, any> = {};
+        for (const [key, subPipeline] of Object.entries(facetSpec)) {
+          facetResult[key] = await this.aggregate(collection, subPipeline);
+        }
+        result = [facetResult];
       } else if (stageName === '$count') {
         const fieldName = String(stagePayload);
         result = [{ [fieldName]: result.length }];
@@ -268,11 +354,30 @@ export class MockNoSqlAdapter implements INoSqlAdapter {
   }
 
   public async beginTransaction(): Promise<NoSqlTransaction> {
+    // Snapshot state for rollback
+    const snapshot = new Map<string, any[]>();
+    for (const [name, docs] of this.collections.entries()) {
+      snapshot.set(name, JSON.parse(JSON.stringify(docs)));
+    }
+
     return {
       session: { sessionId: `mock_session_${Date.now()}` },
       commit: async () => {},
-      rollback: async () => {},
+      rollback: async () => {
+        this.collections.clear();
+        for (const [name, docs] of snapshot.entries()) {
+          this.collections.set(name, docs);
+        }
+      },
     };
+  }
+
+  public async createIndex(
+    _collection: string,
+    keys: Record<string, 1 | -1 | 'text' | '2dsphere' | string>,
+    options?: { unique?: boolean; name?: string; background?: boolean; ttl?: number },
+  ): Promise<string> {
+    return options?.name || `idx_${Object.keys(keys).join('_')}`;
   }
 
   public async *executeStream<T = unknown>(

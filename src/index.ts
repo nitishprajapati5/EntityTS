@@ -63,3 +63,11 @@ export * from './pool';
 export * from './uow';
 // NoSQL & Document Adapters (MongoDB, DynamoDB, etc.)
 export * from './nosql';
+// GraphQL Schema & Resolver Generation
+export * from './graphql';
+// tRPC Typed Router Generation
+export * from './trpc';
+// Real-time & Change Data Capture (CDC)
+export * from './realtime';
+// Testing Utilities (TestKit)
+export * from './testing';

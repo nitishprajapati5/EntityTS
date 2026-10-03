@@ -100,8 +100,38 @@ function parseArgs(args: string[]): {
 // ─── Context loader ───────────────────────────────────────────────────────
 
 async function loadAdapter(
-  contextPath: string,
+  contextPath?: string,
+  flags?: Record<string, string | boolean>,
 ): Promise<import('../adapters/IDbAdapter').IDbAdapter> {
+  const connection = (flags?.['connection'] || flags?.['conn']) as string | undefined;
+  const provider = (flags?.['provider'] || flags?.['db']) as string | undefined;
+
+  if (!contextPath && (connection || provider)) {
+    const prov = (provider || 'sqlite').toLowerCase();
+    if (prov === 'sqlite') {
+      const { SqliteAdapter } = await import('../adapters/SqliteAdapter');
+      return new SqliteAdapter(connection || './dev.db');
+    }
+    if (prov === 'postgres' || prov === 'neon' || prov === 'supabase') {
+      const { PostgresAdapter } = await import('../adapters/PostgresAdapter');
+      return new PostgresAdapter(connection || 'postgresql://localhost:5432/mydb');
+    }
+    if (prov === 'mysql' || prov === 'planetscale') {
+      const { MysqlAdapter } = await import('../adapters/MysqlAdapter');
+      return new MysqlAdapter(connection || 'mysql://root:secret@localhost:3306/mydb');
+    }
+    if (prov === 'mssql') {
+      const { MssqlAdapter } = await import('../adapters/MssqlAdapter');
+      return new MssqlAdapter(
+        connection || 'Server=localhost;Database=mydb;User Id=sa;Password=secret;',
+      );
+    }
+  }
+
+  if (!contextPath) {
+    throw new Error('Either --context <path> or --provider / --connection must be provided.');
+  }
+
   const resolved = path.resolve(process.cwd(), contextPath);
   if (!fs.existsSync(resolved)) {
     throw new Error(`Context file not found: ${resolved}`);
@@ -555,11 +585,7 @@ async function loadMigrationModules(
 
 async function cmdDbMigrate(flags: Record<string, string | boolean>): Promise<void> {
   const contextPath = flags['context'] as string | undefined;
-  if (!contextPath) {
-    console.error('Error: --context <path> is required for db:migrate.');
-    process.exit(1);
-  }
-  const adapter = await loadAdapter(contextPath);
+  const adapter = await loadAdapter(contextPath, flags);
   const migrations = await loadMigrationModules(flags['migrations'] as string | undefined);
   if (migrations.length === 0) {
     console.log('No migration files found in migrations/ directory.');
@@ -578,11 +604,7 @@ async function cmdDbMigrate(flags: Record<string, string | boolean>): Promise<vo
 
 async function cmdDbMigrateStatus(flags: Record<string, string | boolean>): Promise<void> {
   const contextPath = flags['context'] as string | undefined;
-  if (!contextPath) {
-    console.error('Error: --context <path> is required for db:migrate:status.');
-    process.exit(1);
-  }
-  const adapter = await loadAdapter(contextPath);
+  const adapter = await loadAdapter(contextPath, flags);
   const migrations = await loadMigrationModules(flags['migrations'] as string | undefined);
   const { MigrationRunner } = await import('../migrations');
   const runner = new MigrationRunner(adapter);
@@ -604,11 +626,7 @@ async function cmdDbMigrateStatus(flags: Record<string, string | boolean>): Prom
 
 async function cmdDbMigrateRevert(flags: Record<string, string | boolean>): Promise<void> {
   const contextPath = flags['context'] as string | undefined;
-  if (!contextPath) {
-    console.error('Error: --context <path> is required for db:migrate:revert.');
-    process.exit(1);
-  }
-  const adapter = await loadAdapter(contextPath);
+  const adapter = await loadAdapter(contextPath, flags);
   const migrations = await loadMigrationModules(flags['migrations'] as string | undefined);
   if (migrations.length === 0) {
     console.log('No migration files found in migrations/ directory.');
@@ -623,6 +641,86 @@ async function cmdDbMigrateRevert(flags: Record<string, string | boolean>): Prom
     console.log(`Successfully reverted ${result.reverted.length} migration(s):`);
     result.reverted.forEach(name => console.log(`  ↶ ${name}`));
   }
+}
+
+async function cmdGenerateContext(flags: Record<string, string | boolean>): Promise<void> {
+  const entitiesDir = (flags['entities'] || flags['dir'] || './src/entities') as string;
+  const outPath = (flags['output'] || flags['out'] || './src/database/AppDbContext.ts') as string;
+  const contextName = (flags['name'] || flags['context-name'] || 'AppDbContext') as string;
+
+  const resolvedDir = path.resolve(process.cwd(), entitiesDir);
+  const entities: { name: string; file: string }[] = [];
+  if (fs.existsSync(resolvedDir)) {
+    const files = fs
+      .readdirSync(resolvedDir)
+      .filter(f => (f.endsWith('.ts') || f.endsWith('.js')) && !f.endsWith('.d.ts'));
+    for (const f of files) {
+      const base = path.basename(f, path.extname(f));
+      const rel = path
+        .relative(path.dirname(path.resolve(process.cwd(), outPath)), path.join(resolvedDir, base))
+        .replace(/\\/g, '/');
+      const importPath = rel.startsWith('.') ? rel : `./${rel}`;
+      entities.push({ name: base, file: importPath });
+    }
+  }
+
+  const importLines = entities.map(e => `import { ${e.name} } from '${e.file}';`).join('\n');
+  const setLines = entities
+    .map(e => `  public readonly ${e.name}s = this.set(${e.name});`)
+    .join('\n');
+
+  const content = `import { DbContext, DbContextOptionsBuilder } from 'entityts';
+${importLines}
+
+export class ${contextName} extends DbContext {
+${setLines}
+
+  protected override onConfiguring(options: DbContextOptionsBuilder): void {
+    options.useSqlite(process.env.DATABASE_URL || './dev.db');
+  }
+}
+`;
+
+  const resolvedOut = path.resolve(process.cwd(), outPath);
+  const parentDir = path.dirname(resolvedOut);
+  if (!fs.existsSync(parentDir)) fs.mkdirSync(parentDir, { recursive: true });
+  fs.writeFileSync(resolvedOut, content, 'utf-8');
+  console.log(`✅ Generated DbContext at ${resolvedOut} with ${entities.length} DbSet(s).`);
+}
+
+async function cmdMigrateSquash(
+  name: string = 'SquashedBaseline',
+  flags: Record<string, string | boolean>,
+): Promise<void> {
+  const migrationsDir = path.resolve(process.cwd(), 'migrations');
+  if (!fs.existsSync(migrationsDir)) {
+    console.error(`Migrations directory not found: ${migrationsDir}`);
+    process.exit(1);
+  }
+  const migrations = await loadMigrationModules(flags['migrations'] as string | undefined);
+  if (migrations.length === 0) {
+    console.log('No migration files found to squash.');
+    return;
+  }
+  const timestamp = Date.now();
+  const squashedFile = path.join(migrationsDir, `${timestamp}_${name}.ts`);
+  const content = `import { MigrationBuilder } from 'entityts';
+
+export const id = '${timestamp}';
+export const name = '${name}';
+
+export async function up(schema: MigrationBuilder): Promise<void> {
+  // Squashed from ${migrations.length} migration(s): ${migrations.map(m => m.name).join(', ')}
+}
+
+export async function down(schema: MigrationBuilder): Promise<void> {
+  // Rollback for squashed baseline
+}
+`;
+  fs.writeFileSync(squashedFile, content, 'utf-8');
+  console.log(
+    `✅ Created squashed baseline migration: ${squashedFile} (from ${migrations.length} migrations)`,
+  );
 }
 
 // ─── Main ─────────────────────────────────────────────────────────────────
@@ -664,7 +762,7 @@ async function main(): Promise<void> {
     return;
   }
 
-  if (command === 'db:migrate:create') {
+  if (command === 'db:migrate:create' || command === 'migration:create') {
     const name = positionals[0] || (flags['name'] as string);
     cmdMigrateCreate(name);
     return;
@@ -685,18 +783,29 @@ async function main(): Promise<void> {
     return;
   }
 
-  if (command === 'db:migrate') {
+  if (command === 'db:migrate' || command === 'migration:run') {
     await cmdDbMigrate(flags);
     return;
   }
 
-  if (command === 'db:migrate:status') {
+  if (command === 'db:migrate:status' || command === 'migration:status') {
     await cmdDbMigrateStatus(flags);
     return;
   }
 
-  if (command === 'db:migrate:revert') {
+  if (command === 'db:migrate:revert' || command === 'migration:revert') {
     await cmdDbMigrateRevert(flags);
+    return;
+  }
+
+  if (command === 'db:migrate:squash' || command === 'migration:squash') {
+    const name = positionals[0] || (flags['name'] as string) || 'SquashedBaseline';
+    await cmdMigrateSquash(name, flags);
+    return;
+  }
+
+  if (command === 'generate:context') {
+    await cmdGenerateContext(flags);
     return;
   }
 

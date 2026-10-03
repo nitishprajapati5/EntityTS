@@ -5,6 +5,8 @@ import { ModelMetadataRegistry, EntityMetadata } from '../model/EntityMetadata';
 import { MigrationRunner, MigrationModule } from '../migrations/MigrationRunner';
 import { MigrationBuilder } from '../migrations/MigrationBuilder';
 import { entityToMigrationBuilder, sqlTypeToColumnType } from './EntityToMigrationBuilder';
+import { SchemaMigrationDiff, DetailedSchemaDiff, ColumnDiffDetail } from './SchemaMigrationDiff';
+import { SchemaIntrospector } from '../scaffold/SchemaIntrospector';
 
 export interface SchemaDiff {
   missingTables: string[];
@@ -13,7 +15,9 @@ export interface SchemaDiff {
     table: string;
     missingColumns: string[];
     extraColumns: string[];
+    modifiedColumns?: ColumnDiffDetail[];
   }>;
+  modifiedColumns?: ColumnDiffDetail[];
 }
 
 export interface SchemaGeneratorOptions {
@@ -158,6 +162,27 @@ export class SchemaGenerator {
           `  schema.dropColumn(${JSON.stringify(meta.tableName)}, ${JSON.stringify(col.columnName)});`,
         );
       }
+
+      // Column alterations (type and nullability)
+      if (diffResult.columnDiffs) {
+        const tableDiff = diffResult.columnDiffs.find(
+          d => d.table.toLowerCase() === meta.tableName.toLowerCase(),
+        );
+        if (tableDiff?.modifiedColumns) {
+          for (const mod of tableDiff.modifiedColumns) {
+            if (mod.newType) {
+              upStatements.push(
+                `  schema.alterColumn(${JSON.stringify(mod.table)}, ${JSON.stringify(mod.columnName)}, ${JSON.stringify(mod.newType)});`,
+              );
+            }
+            if (mod.oldType) {
+              downStatements.push(
+                `  schema.alterColumn(${JSON.stringify(mod.table)}, ${JSON.stringify(mod.columnName)}, ${JSON.stringify(mod.oldType)});`,
+              );
+            }
+          }
+        }
+      }
     }
 
     const upBody =
@@ -230,6 +255,16 @@ export class SchemaGenerator {
     const extraTables = liveTables.filter(t => !entityTableNames.has(t.toLowerCase()));
 
     const columnDiffs: SchemaDiff['columnDiffs'] = [];
+    const allModifiedColumns: ColumnDiffDetail[] = [];
+
+    let introspectedTables: import('../scaffold/SchemaIntrospector').IntrospectedTable[] = [];
+    try {
+      const introspector = new SchemaIntrospector(this.adapter);
+      introspectedTables = await introspector.introspect();
+    } catch {
+      // In-memory or custom adapters might not implement all introspection queries
+    }
+    const introspectedMap = new Map(introspectedTables.map(t => [t.name.toLowerCase(), t]));
 
     for (const meta of entityMeta) {
       if (!liveTableSet.has(meta.tableName.toLowerCase())) continue;
@@ -243,13 +278,110 @@ export class SchemaGenerator {
 
       const missing = entityCols.filter(c => !liveColSet.has(c));
       const extra = liveColumns.filter(c => !entityColSet.has(c.toLowerCase()));
+      const tableModified: ColumnDiffDetail[] = [];
 
-      if (missing.length > 0 || extra.length > 0) {
-        columnDiffs.push({ table: meta.tableName, missingColumns: missing, extraColumns: extra });
+      const introTable = introspectedMap.get(meta.tableName.toLowerCase());
+      if (introTable) {
+        for (const metaCol of meta.columns.values()) {
+          if (meta.ignoredProperties.has(metaCol.propertyName)) continue;
+          const liveCol = introTable.columns.find(
+            c => c.name.toLowerCase() === metaCol.columnName.toLowerCase(),
+          );
+          if (liveCol) {
+            const expectedType = sqlTypeToColumnType(
+              metaCol.sqlType,
+              this.adapter,
+              metaCol.maxLength,
+            );
+            const liveType = (liveCol.dataType || '').toUpperCase();
+            const expUpper = expectedType.toUpperCase();
+            if (
+              liveType &&
+              !expUpper.includes(liveType) &&
+              !liveType.includes(expUpper) &&
+              !(liveType === 'INT' && expUpper === 'INTEGER') &&
+              !(liveType === 'INTEGER' && expUpper === 'INT')
+            ) {
+              const detail: ColumnDiffDetail = {
+                table: meta.tableName,
+                columnName: metaCol.columnName,
+                changeType: 'type_changed',
+                oldType: liveCol.dataType,
+                newType: expectedType,
+              };
+              tableModified.push(detail);
+              allModifiedColumns.push(detail);
+            }
+
+            const expectedNullable = Boolean(metaCol.isNullable);
+            if (expectedNullable !== liveCol.isNullable) {
+              const detail: ColumnDiffDetail = {
+                table: meta.tableName,
+                columnName: metaCol.columnName,
+                changeType: 'nullable_changed',
+                oldNullable: liveCol.isNullable,
+                newNullable: expectedNullable,
+                oldType: liveCol.dataType,
+                newType: expectedType,
+              };
+              tableModified.push(detail);
+              allModifiedColumns.push(detail);
+            }
+          }
+        }
+      }
+
+      if (missing.length > 0 || extra.length > 0 || tableModified.length > 0) {
+        columnDiffs.push({
+          table: meta.tableName,
+          missingColumns: missing,
+          extraColumns: extra,
+          modifiedColumns: tableModified.length > 0 ? tableModified : undefined,
+        });
       }
     }
 
-    return { missingTables, extraTables, columnDiffs };
+    return {
+      missingTables,
+      extraTables,
+      columnDiffs,
+      modifiedColumns: allModifiedColumns.length > 0 ? allModifiedColumns : undefined,
+    };
+  }
+
+  /**
+   * Detailed schema diff with hasChanges flag and structured modification lists.
+   */
+  public async diffDetailed(): Promise<DetailedSchemaDiff> {
+    const d = await this.diff();
+    const modifiedColumns = d.modifiedColumns || [];
+    const hasChanges =
+      d.missingTables.length > 0 ||
+      d.extraTables.length > 0 ||
+      d.columnDiffs.some(
+        c =>
+          c.missingColumns.length > 0 ||
+          c.extraColumns.length > 0 ||
+          (c.modifiedColumns && c.modifiedColumns.length > 0),
+      );
+
+    return {
+      missingTables: d.missingTables,
+      extraTables: d.extraTables,
+      columnDiffs: d.columnDiffs,
+      modifiedColumns,
+      hasChanges,
+    };
+  }
+
+  /**
+   * Squashes multiple migration modules into a single consolidated baseline migration.
+   */
+  public squash(
+    migrations: MigrationModule[],
+    squashedName: string = 'SquashedBaseline',
+  ): MigrationModule {
+    return SchemaMigrationDiff.squashMigrations(migrations, squashedName);
   }
 
   /** Applies the diff (missing tables / columns) to the live database. */

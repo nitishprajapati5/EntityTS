@@ -206,6 +206,31 @@ export class QueryBuilder<T = any> {
   }
 
   /**
+   * Adds a window function projection expression to the query.
+   */
+  public selectWindow(
+    fn: (
+      w: typeof import('./WindowFunction').WindowFunction,
+    ) => import('./WindowFunction').WindowFunctionExpression,
+  ): this {
+    const { WindowFunction } = require('./WindowFunction');
+    const expr = fn(WindowFunction);
+    const sql = expr.toSql(this.adapter);
+    if (!this._selectColumns || this._selectColumns.length === 0) {
+      this._selectColumns = ['*'];
+    }
+    this._selectColumns.push(sql);
+    return this;
+  }
+
+  /**
+   * Compiles and returns the SELECT query string.
+   */
+  public toSql(): string {
+    return this.toSelectSql().sql;
+  }
+
+  /**
    * Enables or disables `SELECT DISTINCT` to eliminate duplicate rows.
    *
    * @usecase Filter out duplicates from joined or multi-row queries.

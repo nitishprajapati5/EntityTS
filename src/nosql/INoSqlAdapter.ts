@@ -1,4 +1,4 @@
-export type NoSqlProvider = 'mongodb' | 'dynamodb' | 'firestore' | 'cosmosdb' | 'mock';
+export type NoSqlProvider = 'mongodb' | 'dynamodb' | 'firestore' | 'cosmosdb' | 'redis' | 'mock';
 
 export interface InsertOneResult {
   insertedId: unknown;
@@ -135,4 +135,9 @@ export interface INoSqlAdapter {
     options?: FindOptions,
   ): AsyncIterable<T>;
   getCollection?<T = any>(name: string): T;
+  createIndex?(
+    collection: string,
+    keys: Record<string, 1 | -1 | 'text' | '2dsphere' | string>,
+    options?: { unique?: boolean; name?: string; background?: boolean; ttl?: number },
+  ): Promise<string>;
 }

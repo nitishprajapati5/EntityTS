@@ -1282,6 +1282,33 @@ export class DbSet<T extends object = any> {
   }
 
   /**
+   * Adds a window function projection to the query builder.
+   */
+  public selectWindow(
+    fn: (
+      w: typeof import('../query/WindowFunction').WindowFunction,
+    ) => import('../query/WindowFunction').WindowFunctionExpression,
+  ): DbSet<T> {
+    const cloned = this.cloneQueryBuilder();
+    cloned.selectWindow(fn as any);
+    return this.createClone(cloned);
+  }
+
+  /**
+   * Compiles and returns the generated SQL statement for this query.
+   */
+  public toSql(): string {
+    return this.queryBuilder.toSelectSql().sql;
+  }
+
+  /**
+   * Compiles and returns the SQL and parameter bindings for this query.
+   */
+  public toSelectSql(): { sql: string; params: any[] } {
+    return this.queryBuilder.toSelectSql();
+  }
+
+  /**
    * Processes large datasets in manageable batches (chunks) using sequential paging, avoiding memory exhaustion.
    *
    * @usecase Ideal for background jobs, data migrations, ETL pipelines, or bulk notifications.
@@ -1373,6 +1400,13 @@ export class DbSet<T extends object = any> {
       if (batch.length < size) break;
       offset += size;
     }
+  }
+
+  /**
+   * Allows direct async iteration over the DbSet (`for await (const entity of set)`).
+   */
+  public [Symbol.asyncIterator](): AsyncGenerator<T> {
+    return this.stream();
   }
 
   /**
@@ -3825,6 +3859,79 @@ export class DbSet<T extends object = any> {
             (parent as any)[this.mapPropertyToColumn(rel.foreignKey)];
           const key = normalizeKey(fkVal);
           (parent as any)[relName] = map.get(key) || null;
+        }
+      } else if (rel.type === 'manyToMany') {
+        const normalizeKey = (val: unknown): string => {
+          if (val === null || val === undefined) return '';
+          const num = Number(val);
+          if (!isNaN(num) && typeof val !== 'boolean') {
+            return String(num);
+          }
+          return String(val);
+        };
+
+        const parentIds = entities
+          .map(e => (e as any)[myPk])
+          .filter(id => id !== undefined && id !== null);
+
+        if (parentIds.length === 0 || !rel.through) continue;
+
+        const throughTable = rel.through;
+        const parentFkCol = rel.foreignKey || `${this.metadata.tableName}Id`;
+        const targetFkCol = rel.otherKey || `${targetTable}Id`;
+
+        const placeholders = parentIds.map(() => '?').join(', ');
+        const junctionSql = `SELECT ${this.adapter.escapeIdentifier(parentFkCol)} as parentFk, ${this.adapter.escapeIdentifier(targetFkCol)} as targetFk FROM ${this.adapter.escapeIdentifier(throughTable)} WHERE ${this.adapter.escapeIdentifier(parentFkCol)} IN (${placeholders});`;
+        const params = parentIds.map((val, idx) => ({ name: `p${idx + 1}`, value: val }));
+
+        let junctionRows: any[] = [];
+        try {
+          junctionRows = await this.adapter.executeQuery(junctionSql, params);
+        } catch {
+          junctionRows = [];
+        }
+
+        const targetIds = Array.from(
+          new Set(
+            junctionRows
+              .map(r => (r.parentFk !== undefined ? r.targetFk : (r.targetfk ?? r[targetFkCol])))
+              .filter(id => id !== null && id !== undefined),
+          ),
+        );
+
+        const children =
+          targetIds.length > 0
+            ? await childSet.where((clause: any) => clause.in(targetPk, targetIds)).toList()
+            : [];
+
+        if (remainingPath && children.length > 0) {
+          await (childSet as any).loadIncludes(children, [remainingPath]);
+        }
+
+        const childMap = new Map<string, any>();
+        for (const c of children) {
+          const pkVal = (c as any)[targetPk];
+          childMap.set(normalizeKey(pkVal), c);
+        }
+
+        const parentToChildrenMap = new Map<string, any[]>();
+        for (const jRow of junctionRows) {
+          const pFk = jRow.parentFk ?? jRow.parentfk ?? jRow[parentFkCol];
+          const tFk = jRow.targetFk ?? jRow.targetfk ?? jRow[targetFkCol];
+          const pKey = normalizeKey(pFk);
+          const tKey = normalizeKey(tFk);
+          const childObj = childMap.get(tKey);
+          if (childObj) {
+            const list = parentToChildrenMap.get(pKey) || [];
+            list.push(childObj);
+            parentToChildrenMap.set(pKey, list);
+          }
+        }
+
+        for (const parent of entities) {
+          const pId = (parent as any)[myPk];
+          const pKey = normalizeKey(pId);
+          (parent as any)[relName] = parentToChildrenMap.get(pKey) || [];
         }
       }
     }

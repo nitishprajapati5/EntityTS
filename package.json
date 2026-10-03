@@ -51,6 +51,36 @@
       "import": "./dist/esm/nosql/index.js",
       "require": "./dist/nosql/index.js",
       "default": "./dist/nosql/index.js"
+    },
+    "./testing": {
+      "types": "./dist/testing/index.d.ts",
+      "import": "./dist/esm/testing/index.js",
+      "require": "./dist/testing/index.js",
+      "default": "./dist/testing/index.js"
+    },
+    "./graphql": {
+      "types": "./dist/graphql/index.d.ts",
+      "import": "./dist/esm/graphql/index.js",
+      "require": "./dist/graphql/index.js",
+      "default": "./dist/graphql/index.js"
+    },
+    "./trpc": {
+      "types": "./dist/trpc/index.d.ts",
+      "import": "./dist/esm/trpc/index.js",
+      "require": "./dist/trpc/index.js",
+      "default": "./dist/trpc/index.js"
+    },
+    "./realtime": {
+      "types": "./dist/realtime/index.d.ts",
+      "import": "./dist/esm/realtime/index.js",
+      "require": "./dist/realtime/index.js",
+      "default": "./dist/realtime/index.js"
+    },
+    "./cache": {
+      "types": "./dist/cache/index.d.ts",
+      "import": "./dist/esm/cache/index.js",
+      "require": "./dist/cache/index.js",
+      "default": "./dist/cache/index.js"
     }
   },
   "bin": {

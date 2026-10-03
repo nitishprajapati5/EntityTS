@@ -18,6 +18,7 @@ export class DocumentQuery<T = any> {
   private _skip?: number;
   private _limit?: number;
   private _inMemoryFilters: ((entity: T) => boolean)[] = [];
+  private _pipelineStages: AggregationStage[] = [];
 
   constructor(public readonly collectionName: string) {}
 
@@ -32,6 +33,7 @@ export class DocumentQuery<T = any> {
     q._skip = this._skip;
     q._limit = this._limit;
     q._inMemoryFilters = [...this._inMemoryFilters];
+    q._pipelineStages = [...this._pipelineStages];
     for (const c of this._whereClause.conditions) {
       q._whereClause.conditions.push(c);
     }
@@ -340,6 +342,66 @@ export class DocumentQuery<T = any> {
   }
 
   /**
+   * Appends an arbitrary aggregation stage to the pipeline.
+   */
+  public stage(stage: AggregationStage): this {
+    this._pipelineStages.push(stage);
+    return this;
+  }
+
+  /**
+   * Performs a $lookup join with another collection.
+   */
+  public lookup(options: {
+    from: string;
+    localField: string;
+    foreignField: string;
+    as: string;
+  }): this {
+    return this.stage({ $lookup: options });
+  }
+
+  /**
+   * Deconstructs an array field from the input documents to output a document for each element ($unwind).
+   */
+  public unwind(path: string | { path: string; preserveNullAndEmptyArrays?: boolean }): this {
+    if (typeof path === 'string') {
+      const p = path.startsWith('$') ? path : `$${path}`;
+      return this.stage({ $unwind: p });
+    }
+    const p = path.path.startsWith('$') ? path.path : `$${path.path}`;
+    return this.stage({ $unwind: { ...path, path: p } });
+  }
+
+  /**
+   * Groups input documents by a specified identifier expression and applies accumulator expressions ($group).
+   */
+  public group(id: any, accumulators: Record<string, any> = {}): this {
+    return this.stage({ $group: { _id: id, ...accumulators } });
+  }
+
+  /**
+   * Processes multiple aggregation pipelines within a single stage on the same set of input documents ($facet).
+   */
+  public facet(facets: Record<string, AggregationStage[]>): this {
+    return this.stage({ $facet: facets });
+  }
+
+  /**
+   * Adds new fields to documents ($addFields).
+   */
+  public addFields(fields: Record<string, any>): this {
+    return this.stage({ $addFields: fields });
+  }
+
+  /**
+   * Passes along the documents with the requested fields to the next stage in the pipeline ($project).
+   */
+  public project(spec: Record<string, any>): this {
+    return this.stage({ $project: spec });
+  }
+
+  /**
    * Compiles the current query into an Aggregation Pipeline.
    */
   public compileAggregationPipeline(extraStages: AggregationStage[] = []): AggregationStage[] {
@@ -366,6 +428,10 @@ export class DocumentQuery<T = any> {
     const proj = this.compileProjection();
     if (proj) {
       pipeline.push({ $project: proj });
+    }
+
+    for (const stage of this._pipelineStages) {
+      pipeline.push(stage);
     }
 
     for (const stage of extraStages) {
