@@ -1,3 +1,9 @@
+## [1.4.1](https://github.com/nitishprajapati5/EntityTS/compare/v1.4.0...v1.4.1) (2026-10-03)
+
+### Bug Fixes
+
+- **pkg:** clean bin property and ensure prepare script succeeds in CI ([6f8f010](https://github.com/nitishprajapati5/EntityTS/commit/6f8f01046b9b283a74ec79a419145b564e16bfe7))
+
 # [1.4.0](https://github.com/nitishprajapati5/EntityTS/compare/v1.3.0...v1.4.0) (2026-10-03)
 
 ### Features
