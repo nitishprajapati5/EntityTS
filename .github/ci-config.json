@@ -3,7 +3,7 @@
   "enabled": true,
   "description": "EntityTS CI/CD pipeline code configuration toggle. Configure triggers (e.g. push, pull_request) and individual pipeline flags below.",
   "triggers": {
-    "push": false,
+    "push": true,
     "pull_request": true,
     "workflow_dispatch": true,
     "schedule": true
