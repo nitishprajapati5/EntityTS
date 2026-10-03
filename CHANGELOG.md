@@ -1,3 +1,10 @@
+# [1.2.0](https://github.com/nitishprajapati5/EntityTS/compare/v1.1.1...v1.2.0) (2026-10-03)
+
+### Features
+
+- add event trigger filtering support to CI gate script and workflows ([1a80f75](https://github.com/nitishprajapati5/EntityTS/commit/1a80f75dce6035eca6c0bf2598ec210d82336849))
+- implement NoSQL query builder and adapter support for MongoDB ([08e6ff2](https://github.com/nitishprajapati5/EntityTS/commit/08e6ff284ae28a9dbbd910b2370c605b2685143d))
+
 ## [1.1.1](https://github.com/nitishprajapati5/EntityTS/compare/v1.1.0...v1.1.1) (2026-10-03)
 
 # [1.1.0](https://github.com/nitishprajapati5/EntityTS/compare/v1.0.2...v1.1.0) (2026-10-03)
