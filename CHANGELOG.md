@@ -1,3 +1,9 @@
+# [1.1.0](https://github.com/nitishprajapati5/EntityTS/compare/v1.0.2...v1.1.0) (2026-10-03)
+
+### Features
+
+- add support for update set builder, batch mutations, and query change tracking ([709b531](https://github.com/nitishprajapati5/EntityTS/commit/709b53156a53de915db4cf38a6b4df3f6a98be3c))
+
 ## [1.0.2](https://github.com/nitish-prajapati-zignuts/EntityTS/compare/v1.0.1...v1.0.2) (2026-09-23)
 
 ## [1.0.1](https://github.com/nitish-prajapati-zignuts/EntityTS/compare/v1.0.0...v1.0.1) (2026-09-23)
