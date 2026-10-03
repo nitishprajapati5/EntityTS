@@ -87,7 +87,6 @@
     }
   },
   "bin": {
-    "entityTS": "./dist/cli/entityts.js",
     "entityts": "./dist/cli/entityts.js"
   },
   "scripts": {
@@ -119,7 +118,7 @@
     "example:test": "tsc -p example/tsconfig.json && node example/dist/test-client.js",
     "example:postgres": "DATABASE_URL=postgresql://localhost:5432/entityts_db DB_PROVIDER=postgres tsc -p example/tsconfig.json && DATABASE_URL=postgresql://localhost:5432/entityts_db DB_PROVIDER=postgres node example/dist/server.js",
     "example:postgres:test": "DATABASE_URL=postgresql://localhost:5432/entityts_db DB_PROVIDER=postgres tsc -p example/tsconfig.json && DATABASE_URL=postgresql://localhost:5432/entityts_db DB_PROVIDER=postgres node example/dist/test-client.js",
-    "prepare": "husky",
+    "prepare": "husky || true",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
     "typecheck": "tsc --noEmit",
