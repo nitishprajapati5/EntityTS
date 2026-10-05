@@ -1,3 +1,9 @@
+# [1.5.0](https://github.com/nitishprajapati5/EntityTS/compare/v1.4.4...v1.5.0) (2026-10-05)
+
+### Features
+
+- **pkg:** rename package to entityts-orm to satisfy npm registry unique name policy ([d3b0b68](https://github.com/nitishprajapati5/EntityTS/commit/d3b0b684a8c9ffda7a2911a7a4231a4ee390d64f))
+
 ## [1.4.4](https://github.com/nitishprajapati5/EntityTS/compare/v1.4.3...v1.4.4) (2026-10-03)
 
 ### Bug Fixes
