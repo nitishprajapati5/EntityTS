@@ -1,6 +1,6 @@
 {
   "name": "entityts-orm",
-  "version": "1.5.0",
+  "version": "1.5.1",
   "description": "EntityTS — Enterprise EF Core-inspired ORM, DbContext, DbSet<T>, and Stored Procedure Execution for TypeScript & Node.js",
   "homepage": "https://nitishprajapati5.github.io/EntityTS/",
   "bugs": {
