@@ -1131,3 +1131,12 @@ The Docker image encapsulates:
 - Activated `pnpm` package manager.
 - Zero-external-dependency in-memory SQLite database execution validating every single LINQ and SQL query pattern.
 - Automated assertion suite in [`tests/QueryCookbook.spec.ts`](file:///Users/nitishmahendraprajapati/Documents/Developer/EntityTS/tests/QueryCookbook.spec.ts).
+
+---
+
+## 💬 Community, Support & Feedback
+
+- **GitHub Repository**: [github.com/nitishprajapati5/EntityTS](https://github.com/nitishprajapati5/EntityTS)
+- **Discussions & Q&A**: [GitHub Discussions](https://github.com/nitishprajapati5/EntityTS/discussions)
+- **Report an Issue**: [GitHub Issues](https://github.com/nitishprajapati5/EntityTS/issues/new/choose)
+- **Official Documentation**: [nitishprajapati5.github.io/EntityTS](https://nitishprajapati5.github.io/EntityTS/)

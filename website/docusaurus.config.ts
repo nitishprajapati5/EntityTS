@@ -8,10 +8,10 @@ const config: Config = {
   tagline: 'Enterprise TypeScript ORM inspired by EF Core & LINQ',
   favicon: 'img/favicon.ico',
 
-  url: 'https://nitish-prajapati-zignuts.github.io',
+  url: 'https://nitishprajapati5.github.io',
   baseUrl: process.env.DOCUSAURUS_BASE_URL || '/EntityTS/',
 
-  organizationName: 'nitish-prajapati-zignuts',
+  organizationName: 'nitishprajapati5',
   projectName: 'EntityTS',
   trailingSlash: false,
 
@@ -28,7 +28,7 @@ const config: Config = {
       {
         docs: {
           sidebarPath: './sidebars.ts',
-          editUrl: 'https://github.com/nitish-prajapati-zignuts/EntityTS/tree/main/website/',
+          editUrl: 'https://github.com/nitishprajapati5/EntityTS/tree/main/website/',
           routeBasePath: 'docs',
         },
         blog: false,
@@ -88,12 +88,12 @@ const config: Config = {
           label: 'Stored Procedures',
         },
         {
-          href: 'https://github.com/nitish-prajapati-zignuts/EntityTS',
+          href: 'https://github.com/nitishprajapati5/EntityTS',
           label: 'GitHub',
           position: 'right',
         },
         {
-          href: 'https://www.npmjs.com/package/entityts',
+          href: 'https://www.npmjs.com/package/entityts-orm',
           label: 'npm',
           position: 'right',
         },
@@ -149,15 +149,19 @@ const config: Config = {
           items: [
             {
               label: 'GitHub Repository',
-              href: 'https://github.com/nitish-prajapati-zignuts/EntityTS',
+              href: 'https://github.com/nitishprajapati5/EntityTS',
+            },
+            {
+              label: 'Discussions & Q&A',
+              href: 'https://github.com/nitishprajapati5/EntityTS/discussions',
             },
             {
               label: 'Report an Issue',
-              href: 'https://github.com/nitish-prajapati-zignuts/EntityTS/issues',
+              href: 'https://github.com/nitishprajapati5/EntityTS/issues/new/choose',
             },
             {
               label: 'npm Package',
-              href: 'https://www.npmjs.com/package/entityts',
+              href: 'https://www.npmjs.com/package/entityts-orm',
             },
           ],
         },

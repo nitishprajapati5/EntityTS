@@ -1,7 +1,7 @@
 name: 🐛 Bug Report
 description: Report a bug, unexpected behavior, or SQL compile error in EntityTS
-title: "[Bug]: "
-labels: ["bug", "needs-triage"]
+title: '[Bug]: '
+labels: ['bug', 'needs-triage']
 body:
   - type: markdown
     attributes:
@@ -13,7 +13,7 @@ body:
     attributes:
       label: EntityTS Version
       description: What version of `entityts-orm` are you running? (e.g. 1.4.4)
-      placeholder: "1.4.4"
+      placeholder: '1.4.4'
     validations:
       required: true
 
@@ -23,15 +23,15 @@ body:
       label: Database Provider / Dialect
       description: Which database provider are you using?
       options:
-        - "SQL Server (mssql)"
-        - "PostgreSQL (pg)"
-        - "MySQL / MariaDB (mysql2)"
-        - "SQLite (better-sqlite3)"
-        - "Turso / LibSQL (@libsql/client)"
-        - "Neon (@neondatabase/serverless)"
-        - "PlanetScale (@planetscale/database)"
-        - "MockDbAdapter"
-        - "Other / Multiple"
+        - 'SQL Server (mssql)'
+        - 'PostgreSQL (pg)'
+        - 'MySQL / MariaDB (mysql2)'
+        - 'SQLite (better-sqlite3)'
+        - 'Turso / LibSQL (@libsql/client)'
+        - 'Neon (@neondatabase/serverless)'
+        - 'PlanetScale (@planetscale/database)'
+        - 'MockDbAdapter'
+        - 'Other / Multiple'
     validations:
       required: true
 
@@ -40,7 +40,7 @@ body:
     attributes:
       label: Environment
       description: Node.js version, OS, and TypeScript version
-      placeholder: "Node.js v20.11.0, macOS / Ubuntu 22.04, TypeScript 5.8"
+      placeholder: 'Node.js v20.11.0, macOS / Ubuntu 22.04, TypeScript 5.8'
     validations:
       required: true
 
@@ -49,7 +49,7 @@ body:
     attributes:
       label: Describe the Bug
       description: A clear and concise description of what the bug is.
-      placeholder: "When running .where(...) with stored procedures..."
+      placeholder: 'When running .where(...) with stored procedures...'
     validations:
       required: true
 

@@ -11,7 +11,7 @@
   "cleanOutputDir": true,
   "customCss": "./assets/typedoc-theme.css",
   "navigationLinks": {
-    "GitHub": "https://github.com/nitish-prajapati-zignuts/EntityTS"
+    "GitHub": "https://github.com/nitishprajapati5/EntityTS"
   },
   "categorizeByGroup": true,
   "categoryOrder": [

@@ -3,11 +3,12 @@
 > **Enterprise-grade TypeScript ORM and Stored Procedure Engine for Node.js**, inspired by EF Core with Prisma-grade developer ergonomics. Powered by a **100% native proprietary SQL compiler** (zero Knex, zero runtime query builder bloat), strictly isolated database drivers, and multi-table result sets.
 
 [![npm version](https://img.shields.io/npm/v/entityts-orm.svg)](https://www.npmjs.com/package/entityts-orm)
+[![npm downloads](https://img.shields.io/npm/dm/entityts-orm.svg)](https://www.npmjs.com/package/entityts-orm)
+[![Documentation](https://img.shields.io/badge/Docs-nitishprajapati5.github.io-blue.svg)](https://nitishprajapati5.github.io/EntityTS/)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.0+-blue.svg)](https://www.typescriptlang.org/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![GitHub issues](https://img.shields.io/github/issues/nitishprajapati5/EntityTS)](https://github.com/nitishprajapati5/EntityTS/issues)
-[![Discord](https://img.shields.io/badge/Discord-Join%20Community-5865F2?logo=discord&logoColor=white)](https://discord.gg/your-invite-link)
-[![Twitter/X](https://img.shields.io/badge/Follow-%40your_handle-1DA1F2?logo=x&logoColor=white)](https://x.com/your_handle)
+[![GitHub discussions](https://img.shields.io/github/discussions/nitishprajapati5/EntityTS)](https://github.com/nitishprajapati5/EntityTS/discussions)
 
 ---
 
@@ -49,12 +50,12 @@
 
 ## Key Architectural Highlights
 
-- ⚡ **First-Class Stored Procedures**: Native typed input/output parameters, return codes, and multi-table results (`.queryMultiple<[T1, T2]>()`).
-- 🗄️ **Zero-Bloat Isolated Drivers**: If you use SQL Server (`mssql`), only `mssql` is installed—never forces `pg`, `mysql2`, or `better-sqlite3`.
-- 🚀 **100% Native Execution Engine**: No Knex, no external query builder dependencies. Proprietary cross-dialect AST SQL compiler.
-- 🔍 **Prisma-Grade Developer Ergonomics**: Keyset cursor pagination, nested `.include()` eager loading, `$queryRaw`, soft deletes, and automatic audit fields.
-- 🏛️ **Flexible Architectures**: Native support for **Application-Wide Singleton** (one connection pool shared across your server) or **Scoped Per-Request** instances.
-- ⚡ **High-Throughput Execution & Benchmarking**: Built-in comprehensive benchmark suite profiling raw SQL, DbSet LINQ, bulk operations, and stored procedures (`npm run benchmark` or `entityTS benchmark`).
+- **First-Class Stored Procedures**: Native typed input/output parameters, return codes, and multi-table results (`.queryMultiple<[T1, T2]>()`).
+- **Zero-Bloat Isolated Drivers**: If you use SQL Server (`mssql`), only `mssql` is installed—never forces `pg`, `mysql2`, or `better-sqlite3`.
+- **100% Native Execution Engine**: No Knex, no external query builder dependencies. Proprietary cross-dialect AST SQL compiler.
+- **Prisma-Grade Developer Ergonomics**: Keyset cursor pagination, nested `.include()` eager loading, `$queryRaw`, soft deletes, and automatic audit fields.
+- **Flexible Architectures**: Native support for **Application-Wide Singleton** (one connection pool shared across your server) or **Scoped Per-Request** instances.
+- **High-Throughput Execution & Benchmarking**: Built-in comprehensive benchmark suite profiling raw SQL, DbSet LINQ, bulk operations, and stored procedures (`npm run benchmark` or `entityTS benchmark`).
 
 ---
 
@@ -761,9 +762,10 @@ describe('UserService', () => {
 
 We'd love to hear how you're using EntityTS and what features you'd like to see next!
 
-- **🐛 Found a bug or have a feature request?** Open an issue on [GitHub Issues](https://github.com/nitishprajapati5/EntityTS/issues).
+- **🐛 Found a bug or have a feature request?** Open an issue on [GitHub Issues](https://github.com/nitishprajapati5/EntityTS/issues/new/choose) using our interactive issue templates.
 - **💡 General discussions & questions:** Join the conversation on [GitHub Discussions](https://github.com/nitishprajapati5/EntityTS/discussions).
-- **📫 Direct contact / Commercial support:** Reach out to Nitish Prajapati via [LinkedIn](https://linkedin.com/in/your-profile) or email at `nitishprajapati180@gmail.com`.
+- **📖 Documentation & Guides:** Browse the complete guides and API reference at [nitishprajapati5.github.io/EntityTS](https://nitishprajapati5.github.io/EntityTS/).
+- **📫 Direct contact / Commercial support:** Reach out to Nitish Prajapati via [LinkedIn](https://linkedin.com/in/your-profile) or email at [nitishprajapati180@gmail.com](mailto:nitishprajapati180@gmail.com).
 
 ---
 

@@ -51,3 +51,12 @@ graph TD
 - Learn about [Window Functions](./querying/window-functions.md) and [Streaming Pagination](./querying/pagination.md).
 - Discover [GraphQL & tRPC Integration](./advanced/graphql-and-trpc.md) and [Advanced Caching](./advanced/caching.md).
 - Dive into the [Testing Kit](./advanced/testing-testkit.md).
+
+---
+
+## 💬 Community & Support
+
+- **GitHub Repository**: [github.com/nitishprajapati5/EntityTS](https://github.com/nitishprajapati5/EntityTS)
+- **Discussions & Q&A**: [GitHub Discussions](https://github.com/nitishprajapati5/EntityTS/discussions)
+- **Bug Reports & Features**: [GitHub Issues](https://github.com/nitishprajapati5/EntityTS/issues/new/choose)
+- **npm Package**: [`entityts-orm` on npm](https://www.npmjs.com/package/entityts-orm)

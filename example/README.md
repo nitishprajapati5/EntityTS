@@ -212,3 +212,13 @@ curl -X PUT http://localhost:3000/api/products/1/concurrency \
 | `POST` | `/api/sql/raw-execute`                  | Parameterized command via `ctx.executeSql()`                         |
 | `GET`  | `/api/sql/tagged-query`                 | Injection-safe tagged template SQL via `ctx.sql\`...\``              |
 | `GET`  | `/api/sql/procedure-demo`               | Fluent Stored Procedure builder API demo                             |
+
+---
+
+## 💬 Community, Support & Feedback
+
+If you have questions, encounter issues running this showcase, or want to suggest new examples:
+
+- **🐛 Report an Issue:** [EntityTS GitHub Issues](https://github.com/nitishprajapati5/EntityTS/issues)
+- **💡 Discussions & Q&A:** [EntityTS GitHub Discussions](https://github.com/nitishprajapati5/EntityTS/discussions)
+- **📖 Core Documentation:** [nitishprajapati5.github.io/EntityTS](https://nitishprajapati5.github.io/EntityTS/)
