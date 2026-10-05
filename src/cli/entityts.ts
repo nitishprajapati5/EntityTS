@@ -166,9 +166,7 @@ async function cmdDbPush(flags: Record<string, string | boolean>): Promise<void>
     process.exit(1);
   }
 
-  console.log(
-    dryRun ? '🔍 Dry-run mode — no changes will be made.' : '🚀 Pushing schema changes...',
-  );
+  console.log(dryRun ? 'Dry-run mode — no changes will be made.' : 'Pushing schema changes...');
 
   try {
     const { SchemaGenerator } = await import('../codegen/SchemaGenerator');
@@ -183,7 +181,7 @@ async function cmdDbPush(flags: Record<string, string | boolean>): Promise<void>
       : [];
 
     if (allEntities.length === 0) {
-      console.warn('⚠  No entity classes found in registry. Make sure your entities are imported.');
+      console.warn('No entity classes found in registry. Make sure your entities are imported.');
       return;
     }
 
@@ -191,7 +189,7 @@ async function cmdDbPush(flags: Record<string, string | boolean>): Promise<void>
     const applied = await generator.push(dryRun);
 
     if (applied.length === 0) {
-      console.log('✅ Schema is already up to date.');
+      console.log('Schema is already up to date.');
     } else {
       const verb = dryRun ? 'Would apply' : 'Applied';
       console.log(`${verb} ${applied.length} statement(s):`);
@@ -227,7 +225,7 @@ async function cmdMigrateGenerate(
     const filePath = useDiff
       ? await generator.writeDiffMigration(name, migrationsDir)
       : generator.writeMigration(name, migrationsDir);
-    console.log(`✅ Created migration: ${filePath}`);
+    console.log(`Created migration: ${filePath}`);
   } catch (err: any) {
     console.error('Error during db:migrate:generate:', err.message || err);
     process.exit(1);
@@ -253,17 +251,17 @@ async function cmdDbScaffold(flags: Record<string, string | boolean>): Promise<v
     const { EntityScaffolder } = await import('../scaffold/EntityScaffolder');
     const adapter = await loadAdapter(contextPath);
 
-    console.log('🔍 Introspecting database schema...');
+    console.log('Introspecting database schema...');
     const introspector = new SchemaIntrospector(adapter);
     const tables = await introspector.introspect(filterTables);
 
     if (tables.length === 0) {
-      console.warn('⚠  No tables found in the database.');
+      console.warn('No tables found in the database.');
       return;
     }
 
     console.log(`Found ${tables.length} table(s): ${tables.map(t => t.name).join(', ')}`);
-    console.log('✏️  Scaffolding entity files...');
+    console.log('Scaffolding entity files...');
 
     const scaffolder = new EntityScaffolder({
       outputDir: outputDir ? path.resolve(process.cwd(), outputDir) : undefined,
@@ -272,9 +270,9 @@ async function cmdDbScaffold(flags: Record<string, string | boolean>): Promise<v
     });
 
     const result = scaffolder.scaffold(tables);
-    result.written.forEach(f => console.log(`  ✅ ${f}`));
+    result.written.forEach(f => console.log(`  ${f}`));
     result.skipped.forEach(f =>
-      console.log(`  ⏭  Skipped (exists): ${f}  (use --force to overwrite)`),
+      console.log(`  Skipped (exists): ${f}  (use --force to overwrite)`),
     );
     console.log(
       `\nDone! ${result.written.length} file(s) written, ${result.skipped.length} skipped.`,
@@ -323,7 +321,7 @@ export async function down(schema: MigrationBuilder): Promise<void> {
 
   const filePath = path.join(migrationsDir, fileName);
   fs.writeFileSync(filePath, template, 'utf-8');
-  console.log(`✅ Created migration: ${filePath}`);
+  console.log(`Created migration: ${filePath}`);
 }
 
 async function cmdBenchmark(flags: Record<string, string | boolean>): Promise<void> {
@@ -343,7 +341,7 @@ async function cmdBenchmark(flags: Record<string, string | boolean>): Promise<vo
 
   const { runExecutionBenchmarks } = await import('../benchmark');
   if (!json) {
-    console.log(`\n⚡ Starting EntityTS Execution Benchmarks (iterations: ${iterations})...\n`);
+    console.log(`\nStarting EntityTS Execution Benchmarks (iterations: ${iterations})...\n`);
   }
 
   const results = await runExecutionBenchmarks(
@@ -475,7 +473,7 @@ async function cmdDbSeedStatus(flags: Record<string, string | boolean>): Promise
   console.log('\nSeed Status:');
   console.log('─'.repeat(60));
   for (const s of statuses) {
-    const mark = s.applied ? '✓ APPLIED' : '⏳ PENDING';
+    const mark = s.applied ? 'APPLIED' : 'PENDING';
     const dateStr = s.appliedAt ? ` (${new Date(s.appliedAt).toISOString()})` : '';
     console.log(`${mark.padEnd(12)} ${s.id} - ${s.name}${dateStr}`);
   }
@@ -595,7 +593,7 @@ async function cmdDbMigrate(flags: Record<string, string | boolean>): Promise<vo
   const runner = new MigrationRunner(adapter);
   const result = await runner.up(migrations);
   if (result.applied.length === 0) {
-    console.log('✅ Database is already up to date. No pending migrations.');
+    console.log('Database is already up to date. No pending migrations.');
   } else {
     console.log(`Successfully applied ${result.applied.length} migration(s):`);
     result.applied.forEach(name => console.log(`  ✓ ${name}`));
@@ -616,7 +614,7 @@ async function cmdDbMigrateStatus(flags: Record<string, string | boolean>): Prom
   console.log('\nMigration Status:');
   console.log('─'.repeat(70));
   for (const s of statuses) {
-    const mark = s.applied ? '✓ APPLIED' : '⏳ PENDING';
+    const mark = s.applied ? 'APPLIED' : 'PENDING';
     const batchStr = s.batch !== undefined ? ` [Batch: ${s.batch}]` : '';
     const dateStr = s.appliedAt ? ` (${new Date(s.appliedAt).toISOString()})` : '';
     console.log(`${mark.padEnd(12)} ${s.id} - ${s.name}${batchStr}${dateStr}`);
@@ -685,7 +683,7 @@ ${setLines}
   const parentDir = path.dirname(resolvedOut);
   if (!fs.existsSync(parentDir)) fs.mkdirSync(parentDir, { recursive: true });
   fs.writeFileSync(resolvedOut, content, 'utf-8');
-  console.log(`✅ Generated DbContext at ${resolvedOut} with ${entities.length} DbSet(s).`);
+  console.log(`Generated DbContext at ${resolvedOut} with ${entities.length} DbSet(s).`);
 }
 
 async function cmdMigrateSquash(
@@ -719,7 +717,7 @@ export async function down(schema: MigrationBuilder): Promise<void> {
 `;
   fs.writeFileSync(squashedFile, content, 'utf-8');
   console.log(
-    `✅ Created squashed baseline migration: ${squashedFile} (from ${migrations.length} migrations)`,
+    `Created squashed baseline migration: ${squashedFile} (from ${migrations.length} migrations)`,
   );
 }
 
@@ -818,7 +816,7 @@ async function main(): Promise<void> {
     try {
       const adapter = await loadAdapter(contextPath);
       const ok = await adapter.ping();
-      console.log(ok ? '✅ Database connection successful.' : '❌ Ping failed.');
+      console.log(ok ? 'Database connection successful.' : 'Ping failed.');
     } catch (err: any) {
       console.error('Connection failed:', err.message || err);
       process.exit(1);
@@ -930,9 +928,7 @@ async function cmdAdd(
   if (!force) {
     const configuredProvider = detectProjectConfiguredProvider();
     if (configuredProvider && configuredProvider !== provider) {
-      console.warn(
-        `\n⚠️  WARNING: Project is configured for '${configuredProvider.toUpperCase()}'.`,
-      );
+      console.warn(`\nWARNING: Project is configured for '${configuredProvider.toUpperCase()}'.`);
       console.warn(
         `   Installing '${info.packageName}' (${info.displayName}) is NOT needed for ${configuredProvider}.`,
       );
@@ -946,7 +942,7 @@ async function cmdAdd(
   }
 
   const pm = detectPackageManager();
-  console.log(`📦 Installing isolated driver for ${info.displayName}...`);
+  console.log(`Installing isolated driver for ${info.displayName}...`);
   console.log(
     `   Package: ${info.packageName} (only this driver is installed; no unused packages)`,
   );
@@ -969,9 +965,9 @@ async function cmdAdd(
     }
   }
 
-  console.log(`\n✅ Successfully installed ${info.displayName} driver.`);
+  console.log(`\nSuccessfully installed ${info.displayName} driver.`);
   if (info.exclusiveNotes) {
-    console.log(`ℹ️  ${info.exclusiveNotes}\n`);
+    console.log(`Note: ${info.exclusiveNotes}\n`);
   }
 }
 
@@ -1030,9 +1026,9 @@ export class AppDbContext extends DbContext {
 }
 `;
     fs.writeFileSync(contextPath, content, 'utf-8');
-    console.log(`📝 Generated ${contextPath}`);
+    console.log(`Generated ${contextPath}`);
   } else {
-    console.log(`ℹ️  Context file already exists: ${contextPath}`);
+    console.log(`Context file already exists: ${contextPath}`);
   }
 
   // Install ONLY the chosen database package
@@ -1097,15 +1093,15 @@ async function cmdImport(flags: Record<string, string | boolean>): Promise<void>
   for (const ent of result.entities) {
     const entPath = path.join(outDir, ent.filename);
     fs.writeFileSync(entPath, ent.content, 'utf-8');
-    console.log(`📝 Generated entity: ${entPath}`);
+    console.log(`Generated entity: ${entPath}`);
   }
 
   const contextPath = path.join(outDir, result.context.filename);
   fs.writeFileSync(contextPath, result.context.content, 'utf-8');
-  console.log(`📝 Generated DbContext: ${contextPath}`);
+  console.log(`Generated DbContext: ${contextPath}`);
 
   console.log(
-    `\n✅ Successfully imported ${result.entities.length} entities from ${normalizedFrom} into entityTS!`,
+    `\nSuccessfully imported ${result.entities.length} entities from ${normalizedFrom} into entityTS!`,
   );
 }
 

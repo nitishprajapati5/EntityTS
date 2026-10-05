@@ -12,7 +12,7 @@ It brings the architectural elegance of C# / .NET data access patterns to the Ty
 
 ---
 
-## 🚀 Key Highlights
+## Key Highlights
 
 - **Fluent LINQ-Style Querying**: Chain `.where()`, `.orderBy()`, `.select()`, `.include()`, `.toCursorPage()`, and aggregations with complete compile-time type inference.
 - **DbContext & DbSet Pattern**: Organize database entities into strongly-typed contexts with automatic relationship hydration and lifecycle hooks.
@@ -28,7 +28,7 @@ It brings the architectural elegance of C# / .NET data access patterns to the Ty
 
 ---
 
-## 📦 Architecture Overview
+## Architecture Overview
 
 ```mermaid
 graph TD
@@ -54,7 +54,7 @@ graph TD
 
 ---
 
-## 💬 Community & Support
+## Community & Support
 
 - **GitHub Repository**: [github.com/nitishprajapati5/EntityTS](https://github.com/nitishprajapati5/EntityTS)
 - **Discussions & Q&A**: [GitHub Discussions](https://github.com/nitishprajapati5/EntityTS/discussions)

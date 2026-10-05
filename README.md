@@ -44,7 +44,7 @@
   - [Database-First Scaffolding](#database-first-scaffolding)
 - [Execution Performance Benchmarking](#execution-performance-benchmarking)
 - [Unit Testing with MockDbAdapter](#unit-testing-with-mockdbadapter)
-- [Community, Support & Feedback](#-community-support--feedback)
+- [Community, Support & Feedback](#community-support--feedback)
 
 ---
 
@@ -98,7 +98,7 @@ npx entityTS add neon
 npx entityTS add planetscale
 ```
 
-> 💡 **Driver Isolation Guard**: If your `DbContext` is configured for SQL Server (`mssql`), running `entityTS add postgres` will automatically warn and block to prevent accidental package bloat.
+> **Driver Isolation Guard**: If your `DbContext` is configured for SQL Server (`mssql`), running `entityTS add postgres` will automatically warn and block to prevent accidental package bloat.
 
 ### Enable TypeScript Decorators
 
@@ -758,17 +758,17 @@ describe('UserService', () => {
 
 ---
 
-## 💬 Community, Support & Feedback
+## Community, Support & Feedback
 
 We'd love to hear how you're using EntityTS and what features you'd like to see next!
 
-- **🐛 Found a bug or have a feature request?** Open an issue on [GitHub Issues](https://github.com/nitishprajapati5/EntityTS/issues/new/choose) using our interactive issue templates.
-- **💡 General discussions & questions:** Join the conversation on [GitHub Discussions](https://github.com/nitishprajapati5/EntityTS/discussions).
-- **📖 Documentation & Guides:** Browse the complete guides and API reference at [nitishprajapati5.github.io/EntityTS](https://nitishprajapati5.github.io/EntityTS/).
-- **📫 Direct contact / Commercial support:** Reach out to Nitish Prajapati via [LinkedIn](https://linkedin.com/in/your-profile) or email at [nitishprajapati180@gmail.com](mailto:nitishprajapati180@gmail.com).
+- **Found a bug or have a feature request?** Open an issue on [GitHub Issues](https://github.com/nitishprajapati5/EntityTS/issues/new/choose) using our interactive issue templates.
+- **General discussions & questions:** Join the conversation on [GitHub Discussions](https://github.com/nitishprajapati5/EntityTS/discussions).
+- **Documentation & Guides:** Browse the complete guides and API reference at [nitishprajapati5.github.io/EntityTS](https://nitishprajapati5.github.io/EntityTS/).
+- **Direct contact / Commercial support:** Reach out to Nitish Prajapati via [LinkedIn](https://linkedin.com/in/your-profile) or email at [nitishprajapati180@gmail.com](mailto:nitishprajapati180@gmail.com).
 
 ---
 
 ## License
 
-MIT © [Nitish Mahendra Prajapati](https://github.com/nitishprajapati5)
+MIT (c) [Nitish Mahendra Prajapati](https://github.com/nitishprajapati5)

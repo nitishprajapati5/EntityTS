@@ -12,7 +12,7 @@ All querying is structured around strongly-typed, composable LINQ method chainin
 
 ---
 
-## 🔍 Filtering (`where`)
+## Filtering (`where`)
 
 EntityTS provides pure LINQ lambda predicates matching C# / EF Core syntax—with zero string-like operators needed:
 
@@ -51,7 +51,7 @@ const verifiedStaff = await db.users
 
 ---
 
-## 🎯 Projections (`select`)
+## Projections (`select`)
 
 Project database records into refined DTOs, picking only the columns you need:
 
@@ -66,7 +66,7 @@ const summaries = await db.users
 
 ---
 
-## 📊 Sorting (`orderBy` & `thenBy`)
+## Sorting (`orderBy` & `thenBy`)
 
 Chain primary and secondary sort criteria with compile-time property verification:
 
@@ -80,7 +80,7 @@ const sortedUsers = await db.users
 
 ---
 
-## 🔗 Eager Loading (`include` & `thenInclude`)
+## Eager Loading (`include` & `thenInclude`)
 
 Eagerly load related entities without N+1 query overhead:
 
@@ -95,7 +95,7 @@ const usersWithDetails = await db.users
 
 ---
 
-## 🔢 Pagination & Slicing (`skip` & `take`)
+## Pagination & Slicing (`skip` & `take`)
 
 Implement standard LINQ offset pagination or high-performance keyset cursor pagination:
 
@@ -115,7 +115,7 @@ const cursorPage = await db.posts
 
 ---
 
-## 🔎 Single Element Lookups
+## Single Element Lookups
 
 Retrieve specific elements matching LINQ predicates:
 
@@ -135,7 +135,7 @@ const singleUser = await db.users.singleOrDefault(u => u.username === 'alice_dev
 
 ---
 
-## 📈 Aggregations & Quantifiers
+## Aggregations & Quantifiers
 
 Perform aggregate calculations directly in the database engine:
 
@@ -157,7 +157,7 @@ const peakScore = await db.scores.max(s => s.score);
 
 ---
 
-## 📦 Grouping & Summary Projections (`groupBy`)
+## Grouping & Summary Projections (`groupBy`)
 
 Group records by key and project calculated aggregate summaries:
 
@@ -175,7 +175,7 @@ const salesByDepartment = await db.orders
 
 ---
 
-## ⚡ Performance Modifiers & Tracking
+## Performance Modifiers & Tracking
 
 ```ts
 // AsNoTracking: Bypass change tracking for read-only query performance
@@ -199,7 +199,7 @@ const uniqueRoles = await db.users.select('role').distinct().toList();
 
 ---
 
-## ⚡ Direct Batch Mutations (`executeUpdate` & `executeDelete`)
+## Direct Batch Mutations (`executeUpdate` & `executeDelete`)
 
 Execute high-performance bulk updates and bulk deletes directly on the database server in a single SQL statement without loading entities into memory or attaching them to the ChangeTracker (similar to EF Core's `ExecuteUpdate` & `ExecuteDelete`).
 

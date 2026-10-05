@@ -1134,7 +1134,7 @@ The Docker image encapsulates:
 
 ---
 
-## 💬 Community, Support & Feedback
+## Community, Support & Feedback
 
 - **GitHub Repository**: [github.com/nitishprajapati5/EntityTS](https://github.com/nitishprajapati5/EntityTS)
 - **Discussions & Q&A**: [GitHub Discussions](https://github.com/nitishprajapati5/EntityTS/discussions)

@@ -10,7 +10,7 @@ EntityTS includes a built-in Change Data Capture (CDC) engine (`CdcEmitter`) to 
 
 ---
 
-## ⚡ What is CDC?
+## What is CDC?
 
 Change Data Capture intercepts data modifications at the database or ORM lifecycle layer and emits structured change events containing:
 
@@ -22,7 +22,7 @@ Change Data Capture intercepts data modifications at the database or ORM lifecyc
 
 ---
 
-## 📡 Subscribing to CDC Events
+## Subscribing to CDC Events
 
 Use `CdcEmitter` to subscribe to table events or bridge mutations to an `EntityEventBus`:
 
@@ -49,7 +49,7 @@ cdc.subscribe({ operation: 'UPDATE' }, async event => {
 
 ---
 
-## 🚀 Publishing CDC Events
+## Publishing CDC Events
 
 When performing mutations, publish CDC events directly or configure your DbContext hooks / Unit of Work to emit them automatically:
 
@@ -66,6 +66,6 @@ await cdc.publish({
 
 ---
 
-## 🔄 Integration with Transactional Outbox
+## Integration with Transactional Outbox
 
 For distributed microservices, pair `CdcEmitter` with the [Transactional Outbox](./idempotency-and-outbox.md) to guarantee **at-least-once** event publishing without dual-write inconsistencies.

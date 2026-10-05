@@ -10,7 +10,7 @@ EntityTS eliminates API boilerplate by automatically deriving type-safe GraphQL 
 
 ---
 
-## 🚀 GraphQL Schema Generation (`GraphQLSchemaBuilder`)
+## GraphQL Schema Generation (`GraphQLSchemaBuilder`)
 
 `GraphQLSchemaBuilder` automatically compiles entity definitions and relationships into standard GraphQL Schema Definition Language (SDL) strings and executable resolver maps.
 
@@ -81,7 +81,7 @@ const userPosts = await batcher.load(user.id);
 
 ---
 
-## ⚡ tRPC Router Generation (`TrpcRouterBuilder`)
+## tRPC Router Generation (`TrpcRouterBuilder`)
 
 For full-stack TypeScript applications with Next.js, Remix, or Vite, `TrpcRouterBuilder` creates type-safe procedure routers without writing repetitive CRUD endpoints:
 

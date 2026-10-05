@@ -210,7 +210,7 @@ export async function loadDriver<T = any>(
     const displayName = info ? info.displayName : provider;
     const cmd = getInstallCommand(pkg, pm);
     const entitytsCmd = `entityTS add ${provider}`;
-    const notes = info?.exclusiveNotes ? `\n\n  ⚠️  ${info.exclusiveNotes}` : '';
+    const notes = info?.exclusiveNotes ? `\n\n  Note: ${info.exclusiveNotes}` : '';
 
     throw new ConnectionException(
       `Database driver '${pkg}' is not installed.\n` +

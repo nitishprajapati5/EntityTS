@@ -1,4 +1,4 @@
-name: 🐛 Bug Report
+name: Bug Report
 description: Report a bug, unexpected behavior, or SQL compile error in EntityTS
 title: '[Bug]: '
 labels: ['bug', 'needs-triage']

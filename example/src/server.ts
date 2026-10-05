@@ -25,10 +25,10 @@ async function bootstrap() {
 
   // 2. Start HTTP Server
   const server = app.listen(config.port, () => {
-    console.log(`\n🚀 Server listening on: \x1b[32mhttp://localhost:${config.port}\x1b[0m`);
-    console.log(`📖 Open the dashboard in browser to explore all CRUD endpoints:`);
+    console.log(`\nServer listening on: \x1b[32mhttp://localhost:${config.port}\x1b[0m`);
+    console.log(`Open the dashboard in browser to explore all CRUD endpoints:`);
     console.log(`   \x1b[36mhttp://localhost:${config.port}/\x1b[0m`);
-    console.log(`🩺 Health check endpoint:`);
+    console.log(`Health check endpoint:`);
     console.log(`   \x1b[36mhttp://localhost:${config.port}/health\x1b[0m\n`);
   });
 

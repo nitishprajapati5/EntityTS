@@ -12,7 +12,7 @@ It provides **Tagged Query Caching**, **Multi-Tier L1/L2 Caching**, and **Write-
 
 ---
 
-## 🏷️ Tagged Query Cache (`TaggedQueryCache`)
+## Tagged Query Cache (`TaggedQueryCache`)
 
 Traditional query caching fails when you need to invalidate all queries related to a given entity or tenant.
 
@@ -36,7 +36,7 @@ await cache.tag('users:*').invalidate();
 
 ---
 
-## ⚡ Multi-Tier Caching (`EntityCache`)
+## Multi-Tier Caching (`EntityCache`)
 
 `EntityCache` coordinates a fast in-memory **L1 cache** (e.g., Node.js process memory) with a distributed **L2 cache** (e.g., Redis).
 
@@ -61,7 +61,7 @@ await entityCache.invalidateEntity(User, user.id);
 
 ---
 
-## 🔄 Write-Through & Read-Through Cache (`WriteThroughCache`)
+## Write-Through & Read-Through Cache (`WriteThroughCache`)
 
 `WriteThroughCache` simplifies data access by abstracting cache misses and synchronizing mutations with the database and cache simultaneously:
 

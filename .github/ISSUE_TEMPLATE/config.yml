@@ -1,8 +1,8 @@
 blank_issues_enabled: false
 contact_links:
-  - name: 💬 Questions & Community Support
+  - name: Questions & Community Support
     url: https://github.com/nitishprajapati5/EntityTS/discussions
     about: Please ask questions and discuss ideas in GitHub Discussions instead of opening an issue.
-  - name: 🔒 Security Vulnerability
+  - name: Security Vulnerability
     url: mailto:nitishprajapati180@gmail.com
     about: Please report security vulnerabilities privately via email.

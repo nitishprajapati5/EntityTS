@@ -39,7 +39,7 @@ export class BenchmarkRunner {
 
     for (const scenario of filteredScenarios) {
       if (!options.silent) {
-        process.stdout.write(`  ⏳ Running: [${scenario.category}] ${scenario.name} ...\r`);
+        process.stdout.write(`  Running: [${scenario.category}] ${scenario.name} ...\r`);
       }
 
       if (scenario.setup) {
@@ -137,7 +137,7 @@ export class BenchmarkRunner {
    */
   public printResultsTable(results: BenchmarkResult[]): void {
     console.log('\n' + '='.repeat(108));
-    console.log('  ⚡ EntityTS Execution Performance Benchmark Results');
+    console.log('  EntityTS Execution Performance Benchmark Results');
     console.log('='.repeat(108));
 
     const header = [

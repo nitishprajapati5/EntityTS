@@ -130,7 +130,7 @@ export class SeedRunner {
    * @example
    * ```ts
    * const statuses = await runner.status([seed1, seed2]);
-   * statuses.forEach(s => console.log(s.name, s.applied ? '✅' : '⏳'));
+   * statuses.forEach(s => console.log(s.name, s.applied ? 'APPLIED' : 'PENDING'));
    * ```
    */
   public async status(seeds: SeedModule[]): Promise<SeedStatus[]> {

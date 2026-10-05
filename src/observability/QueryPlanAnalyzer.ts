@@ -397,12 +397,12 @@ export function createQueryPlanLogger(opts: QueryPlanLoggerOptions): QueryHooks 
 
       if (planResult.hasSeqScan && warnOnSeqScan) {
         lines.push(
-          `  ${cRed}⚠  Seq Scan detected — consider adding an index on filtered column(s)${cReset}`,
+          `  ${cRed}[WARN] Seq Scan detected — consider adding an index on filtered column(s)${cReset}`,
         );
       }
       if (planResult.hasNestedLoopWarning) {
         lines.push(
-          `  ${cYellow}⚠  Nested Loop join with >10k actual rows — check join strategy${cReset}`,
+          `  ${cYellow}[WARN] Nested Loop join with >10k actual rows — check join strategy${cReset}`,
         );
       }
 

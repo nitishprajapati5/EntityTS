@@ -105,14 +105,14 @@ function printStatus() {
   console.log('\n========================================');
   console.log('       EntityTS CI/CD Pipeline Flags     ');
   console.log('========================================');
-  console.log(`Global CI/CD Switch: ${config.enabled !== false ? '✅ ENABLED' : '⛔ DISABLED'}`);
+  console.log(`Global CI/CD Switch: ${config.enabled !== false ? 'ENABLED' : 'DISABLED'}`);
   console.log('----------------------------------------');
   console.log('Event Triggers:');
   const triggers = config.triggers || {};
   const standardTriggers = ['push', 'pull_request', 'workflow_dispatch', 'schedule'];
   for (const trigger of standardTriggers) {
     const isEnabled = triggers[trigger] !== false;
-    const mark = isEnabled ? '✅ ENABLED' : '⛔ DISABLED';
+    const mark = isEnabled ? 'ENABLED' : 'DISABLED';
     console.log(`  • ${trigger.padEnd(18)}: ${mark}`);
   }
   console.log('----------------------------------------');
@@ -133,7 +133,7 @@ function printStatus() {
   const allKeys = Array.from(new Set([...standardList, ...Object.keys(pipelines)]));
   for (const key of allKeys) {
     const effectiveStatus = checkPipeline(key);
-    const mark = effectiveStatus.enabled ? '✅ ENABLED' : '⛔ DISABLED';
+    const mark = effectiveStatus.enabled ? 'ENABLED' : 'DISABLED';
     console.log(
       `  • ${key.padEnd(18)}: ${mark} ${!effectiveStatus.enabled ? `(${effectiveStatus.reason})` : ''}`,
     );
@@ -152,13 +152,13 @@ function main() {
 
   if (command === '--on' || command === 'on') {
     setGlobalFlag(true);
-    console.log('[ci-gate] ✅ Global CI/CD enabled in .github/ci-config.json (enabled: true)');
+    console.log('[ci-gate] Global CI/CD enabled in .github/ci-config.json (enabled: true)');
     return;
   }
 
   if (command === '--off' || command === 'off') {
     setGlobalFlag(false);
-    console.log('[ci-gate] ⛔ Global CI/CD disabled in .github/ci-config.json (enabled: false)');
+    console.log('[ci-gate] Global CI/CD disabled in .github/ci-config.json (enabled: false)');
     return;
   }
 
@@ -167,7 +167,7 @@ function main() {
     const enable = val !== 'off' && val !== 'false' && val !== 'disable';
     setTriggerFlag('push', enable);
     console.log(
-      `[ci-gate] ${enable ? '✅' : '⛔'} 'push' trigger set to ${enable} in .github/ci-config.json`,
+      `[ci-gate] ${enable ? 'ENABLED' : 'DISABLED'} 'push' trigger set to ${enable} in .github/ci-config.json`,
     );
     return;
   }
@@ -177,7 +177,7 @@ function main() {
     const enable = val !== 'off' && val !== 'false' && val !== 'disable';
     setTriggerFlag('pull_request', enable);
     console.log(
-      `[ci-gate] ${enable ? '✅' : '⛔'} 'pull_request' trigger set to ${enable} in .github/ci-config.json`,
+      `[ci-gate] ${enable ? 'ENABLED' : 'DISABLED'} 'pull_request' trigger set to ${enable} in .github/ci-config.json`,
     );
     return;
   }
@@ -191,7 +191,7 @@ function main() {
       process.exit(1);
     }
     setPipelineFlag(target, true);
-    console.log(`[ci-gate] ✅ Pipeline '${target}' enabled in .github/ci-config.json`);
+    console.log(`[ci-gate] Pipeline '${target}' enabled in .github/ci-config.json`);
     return;
   }
 
@@ -204,7 +204,7 @@ function main() {
       process.exit(1);
     }
     setPipelineFlag(target, false);
-    console.log(`[ci-gate] ⛔ Pipeline '${target}' disabled in .github/ci-config.json`);
+    console.log(`[ci-gate] Pipeline '${target}' disabled in .github/ci-config.json`);
     return;
   }
 
@@ -221,10 +221,10 @@ function main() {
   }
 
   if (!result.enabled) {
-    console.log(`[ci-gate] ⛔ Pipeline '${command}' is SKIPPED: ${result.reason}`);
+    console.log(`[ci-gate] Pipeline '${command}' is SKIPPED: ${result.reason}`);
     process.exit(0);
   } else {
-    console.log(`[ci-gate] ✅ Pipeline '${command}' is ENABLED.`);
+    console.log(`[ci-gate] Pipeline '${command}' is ENABLED.`);
     process.exit(0);
   }
 }

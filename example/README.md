@@ -112,7 +112,7 @@ DATABASE_URL="postgresql://username:password@localhost:5432/my_database" npm run
 
 ## Complete CRUD API Endpoints Reference
 
-### 🟢 Create Operations
+### Create Operations
 
 | Method | Endpoint                    | Description                                      |
 | ------ | --------------------------- | ------------------------------------------------ |
@@ -130,7 +130,7 @@ curl -X POST http://localhost:3000/api/users \
 
 ---
 
-### 🔵 Read Operations
+### Read Operations
 
 | Method | Endpoint                      | Description                                                                    |
 | ------ | ----------------------------- | ------------------------------------------------------------------------------ |
@@ -160,7 +160,7 @@ curl "http://localhost:3000/api/users/paged?page=1&pageSize=3"
 
 ---
 
-### 🟡 Update Operations
+### Update Operations
 
 | Method  | Endpoint                        | Description                                                            |
 | ------- | ------------------------------- | ---------------------------------------------------------------------- |
@@ -189,7 +189,7 @@ curl -X PUT http://localhost:3000/api/products/1/concurrency \
 
 ---
 
-### 🔴 Delete Operations
+### Delete Operations
 
 | Method   | Endpoint                    | Description                                                      |
 | -------- | --------------------------- | ---------------------------------------------------------------- |
@@ -200,7 +200,7 @@ curl -X PUT http://localhost:3000/api/products/1/concurrency \
 
 ---
 
-### 🟣 Transactions & Raw SQL
+### Transactions & Raw SQL
 
 | Method | Endpoint                                | Description                                                          |
 | ------ | --------------------------------------- | -------------------------------------------------------------------- |
@@ -215,10 +215,10 @@ curl -X PUT http://localhost:3000/api/products/1/concurrency \
 
 ---
 
-## 💬 Community, Support & Feedback
+## Community, Support & Feedback
 
 If you have questions, encounter issues running this showcase, or want to suggest new examples:
 
-- **🐛 Report an Issue:** [EntityTS GitHub Issues](https://github.com/nitishprajapati5/EntityTS/issues)
-- **💡 Discussions & Q&A:** [EntityTS GitHub Discussions](https://github.com/nitishprajapati5/EntityTS/discussions)
-- **📖 Core Documentation:** [nitishprajapati5.github.io/EntityTS](https://nitishprajapati5.github.io/EntityTS/)
+- **Report an Issue:** [EntityTS GitHub Issues](https://github.com/nitishprajapati5/EntityTS/issues)
+- **Discussions & Q&A:** [EntityTS GitHub Discussions](https://github.com/nitishprajapati5/EntityTS/discussions)
+- **Core Documentation:** [nitishprajapati5.github.io/EntityTS](https://nitishprajapati5.github.io/EntityTS/)

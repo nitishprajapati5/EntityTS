@@ -196,7 +196,7 @@ app.get('/', async (req: Request, res: Response) => {
 <body>
   <div class="container">
     <header>
-      <h1>⚡ entityTS — Express API Showcase</h1>
+      <h1>entityTS — Express API Showcase</h1>
       <p style="margin: 4px 0 12px 0; color: #8b949e;">EF Core-inspired DbContext & DbSet ORM with Stored Procedures, Transactions, and Full CRUD in Node.js</p>
       <div>
         <span class="badge status-ok">● Database: ${db.provider.toUpperCase()} (${isHealthy ? 'Connected' : 'Disconnected'})</span>
@@ -209,7 +209,7 @@ app.get('/', async (req: Request, res: Response) => {
     <div class="grid">
       <!-- CREATE SCENARIOS -->
       <div class="card">
-        <h2>🟢 Create Scenarios</h2>
+        <h2>Create Scenarios</h2>
         <div class="endpoint post">
           <div><span class="method POST">POST</span> <span class="path">/api/users</span></div>
           <div class="desc">1. Single entity insert via <code>.add()</code></div>
@@ -235,7 +235,7 @@ app.get('/', async (req: Request, res: Response) => {
 
       <!-- READ SCENARIOS -->
       <div class="card">
-        <h2>🔵 Read Scenarios</h2>
+        <h2>Read Scenarios</h2>
         <div class="endpoint get">
           <div><span class="method GET">GET</span> <span class="path">/api/users?role=user&minScore=50&orderBy=score&order=desc</span></div>
           <div class="desc">4. Fluent LINQ filter with <code>.where()</code>, <code>.orderBy()</code>, <code>.take()</code></div>
@@ -272,7 +272,7 @@ app.get('/', async (req: Request, res: Response) => {
 
       <!-- UPDATE SCENARIOS -->
       <div class="card">
-        <h2>🟡 Update Scenarios</h2>
+        <h2>Update Scenarios</h2>
         <div class="endpoint put">
           <div><span class="method PUT">PUT</span> <span class="path">/api/users/1</span></div>
           <div class="desc">12. Direct update by ID via <code>.update(id, patch)</code></div>
@@ -304,7 +304,7 @@ app.get('/', async (req: Request, res: Response) => {
 
       <!-- DELETE SCENARIOS -->
       <div class="card">
-        <h2>🔴 Delete & Restore Scenarios</h2>
+        <h2>Delete & Restore Scenarios</h2>
         <div class="endpoint delete">
           <div><span class="method DELETE">DELETE</span> <span class="path">/api/users/2</span></div>
           <div class="desc">18. Soft-delete via <code>.remove(id)</code> (sets <code>deleted_at</code> timestamp)</div>
@@ -325,7 +325,7 @@ app.get('/', async (req: Request, res: Response) => {
 
       <!-- TRANSACTION & SQL SCENARIOS -->
       <div class="card" style="grid-column: 1 / -1;">
-        <h2>🟣 Transactions & Raw SQL Scenarios</h2>
+        <h2>Transactions & Raw SQL Scenarios</h2>
         <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(450px, 1fr)); gap: 14px;">
           <div class="endpoint post">
             <div><span class="method POST">POST</span> <span class="path">/api/transactions/atomic-multi-entity</span></div>
