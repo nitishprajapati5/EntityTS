@@ -1,0 +1,93 @@
+name: 🐛 Bug Report
+description: Report a bug, unexpected behavior, or SQL compile error in EntityTS
+title: "[Bug]: "
+labels: ["bug", "needs-triage"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for taking the time to report an issue! Before submitting, please check existing issues to see if the problem has already been reported.
+
+  - type: input
+    id: version
+    attributes:
+      label: EntityTS Version
+      description: What version of `entityts-orm` are you running? (e.g. 1.4.4)
+      placeholder: "1.4.4"
+    validations:
+      required: true
+
+  - type: dropdown
+    id: dialect
+    attributes:
+      label: Database Provider / Dialect
+      description: Which database provider are you using?
+      options:
+        - "SQL Server (mssql)"
+        - "PostgreSQL (pg)"
+        - "MySQL / MariaDB (mysql2)"
+        - "SQLite (better-sqlite3)"
+        - "Turso / LibSQL (@libsql/client)"
+        - "Neon (@neondatabase/serverless)"
+        - "PlanetScale (@planetscale/database)"
+        - "MockDbAdapter"
+        - "Other / Multiple"
+    validations:
+      required: true
+
+  - type: input
+    id: environment
+    attributes:
+      label: Environment
+      description: Node.js version, OS, and TypeScript version
+      placeholder: "Node.js v20.11.0, macOS / Ubuntu 22.04, TypeScript 5.8"
+    validations:
+      required: true
+
+  - type: textarea
+    id: description
+    attributes:
+      label: Describe the Bug
+      description: A clear and concise description of what the bug is.
+      placeholder: "When running .where(...) with stored procedures..."
+    validations:
+      required: true
+
+  - type: textarea
+    id: reproduction
+    attributes:
+      label: Minimal Reproducible Code
+      description: Please share a minimal TypeScript snippet or entity/query definition that reproduces the issue.
+      render: typescript
+      placeholder: |
+        class User extends Entity<User> {
+          @Column()
+          id!: number;
+        }
+
+        const result = await db.users.where(u => ...);
+    validations:
+      required: true
+
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected Behavior
+      description: What did you expect to happen?
+    validations:
+      required: true
+
+  - type: textarea
+    id: actual
+    attributes:
+      label: Actual Behavior & Error Logs / Stack Trace
+      description: Include any compiler errors, SQL outputs, or stack traces.
+      render: shell
+    validations:
+      required: true
+
+  - type: textarea
+    id: additional-context
+    attributes:
+      label: Additional Context
+      description: Add any other context or screenshots about the problem here.

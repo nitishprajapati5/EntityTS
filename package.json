@@ -2,6 +2,11 @@
   "name": "entityts-orm",
   "version": "1.4.4",
   "description": "EntityTS — Enterprise EF Core-inspired ORM, DbContext, DbSet<T>, and Stored Procedure Execution for TypeScript & Node.js",
+  "homepage": "https://nitishprajapati5.github.io/EntityTS/",
+  "bugs": {
+    "url": "https://github.com/nitishprajapati5/EntityTS/issues",
+    "email": "nitishprajapati180@gmail.com"
+  },
   "main": "dist/index.js",
   "module": "dist/esm/index.js",
   "types": "dist/index.d.ts",
@@ -144,7 +149,7 @@
     "mysql",
     "sqlite"
   ],
-  "author": "",
+  "author": "Nitish Mahendra Prajapati <nitishprajapati180@gmail.com> (https://github.com/nitishprajapati5)",
   "license": "MIT",
   "dependencies": {
     "reflect-metadata": "^0.2.2"

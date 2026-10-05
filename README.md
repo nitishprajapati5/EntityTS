@@ -2,9 +2,12 @@
 
 > **Enterprise-grade TypeScript ORM and Stored Procedure Engine for Node.js**, inspired by EF Core with Prisma-grade developer ergonomics. Powered by a **100% native proprietary SQL compiler** (zero Knex, zero runtime query builder bloat), strictly isolated database drivers, and multi-table result sets.
 
+[![npm version](https://img.shields.io/npm/v/entityts-orm.svg)](https://www.npmjs.com/package/entityts-orm)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.0+-blue.svg)](https://www.typescriptlang.org/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-[![Tests](https://img.shields.io/badge/Tests-311%20passing-brightgreen.svg)](<>)
+[![GitHub issues](https://img.shields.io/github/issues/nitishprajapati5/EntityTS)](https://github.com/nitishprajapati5/EntityTS/issues)
+[![Discord](https://img.shields.io/badge/Discord-Join%20Community-5865F2?logo=discord&logoColor=white)](https://discord.gg/your-invite-link)
+[![Twitter/X](https://img.shields.io/badge/Follow-%40your_handle-1DA1F2?logo=x&logoColor=white)](https://x.com/your_handle)
 
 ---
 
@@ -40,6 +43,7 @@
   - [Database-First Scaffolding](#database-first-scaffolding)
 - [Execution Performance Benchmarking](#execution-performance-benchmarking)
 - [Unit Testing with MockDbAdapter](#unit-testing-with-mockdbadapter)
+- [Community, Support & Feedback](#-community-support--feedback)
 
 ---
 
@@ -753,6 +757,16 @@ describe('UserService', () => {
 
 ---
 
+## 💬 Community, Support & Feedback
+
+We'd love to hear how you're using EntityTS and what features you'd like to see next!
+
+- **🐛 Found a bug or have a feature request?** Open an issue on [GitHub Issues](https://github.com/nitishprajapati5/EntityTS/issues).
+- **💡 General discussions & questions:** Join the conversation on [GitHub Discussions](https://github.com/nitishprajapati5/EntityTS/discussions).
+- **📫 Direct contact / Commercial support:** Reach out to Nitish Prajapati via [LinkedIn](https://linkedin.com/in/your-profile) or email at `nitishprajapati180@gmail.com`.
+
+---
+
 ## License
 
-MIT © [EntityTS Team](https://github.com/entityts)
+MIT © [Nitish Mahendra Prajapati](https://github.com/nitishprajapati5)
